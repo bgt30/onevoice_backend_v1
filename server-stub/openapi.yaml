@@ -1,0 +1,1757 @@
+openapi: 3.0.3
+info:
+  contact:
+    email: support@onevoice.com
+    name: OneVoice Team
+  description: AI-powered video dubbing service backend API
+  license:
+    name: MIT
+  title: OneVoice Backend API
+  version: 1.0.0
+servers:
+- description: Production server
+  url: https://api.onevoice.com
+- description: Staging server
+  url: https://staging-api.onevoice.com
+- description: Development server
+  url: http://localhost:8000
+security:
+- bearerAuth: []
+tags:
+- description: User authentication and authorization
+  name: Authentication
+- description: User profile and account management
+  name: User Management
+- description: Payment processing and subscription management
+  name: Billing & Subscriptions
+- description: "Video upload, processing, and dubbing operations"
+  name: Video Management
+paths:
+  /api/auth/login:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+          description: Successful login
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Invalid credentials
+      security: []
+      summary: User login
+      tags:
+      - Authentication
+  /api/auth/signup:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+          description: User created successfully
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Invalid input data
+      security: []
+      summary: User registration
+      tags:
+      - Authentication
+  /api/auth/forgot-password:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_auth_forgot_password_post_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Password reset email sent
+      security: []
+      summary: Request password reset
+      tags:
+      - Authentication
+  /api/auth/reset-password:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_auth_reset_password_post_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Password reset successful
+      security: []
+      summary: Reset password with token
+      tags:
+      - Authentication
+  /api/auth/logout:
+    post:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Logout successful
+      summary: User logout
+      tags:
+      - Authentication
+  /api/users/profile:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: User profile retrieved
+      summary: Get user profile
+      tags:
+      - User Management
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_users_profile_put_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: Profile updated successfully
+      summary: Update user profile
+      tags:
+      - User Management
+  /api/users/password:
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_users_password_put_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Password changed successfully
+      summary: Change user password
+      tags:
+      - User Management
+  /api/users/avatar:
+    delete:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Avatar deleted successfully
+      summary: Delete user avatar
+      tags:
+      - User Management
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/_api_users_avatar_post_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_users_avatar_post_200_response"
+          description: Avatar uploaded successfully
+      summary: Upload user avatar
+      tags:
+      - User Management
+  /api/users/subscription:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+          description: Subscription details retrieved
+      summary: Get user subscription details
+      tags:
+      - User Management
+  /api/users/credits/usage:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_users_credits_usage_get_200_response"
+          description: Credits usage retrieved
+      summary: Get user credits usage
+      tags:
+      - User Management
+  /api/users/dashboard/stats:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_users_dashboard_stats_get_200_response"
+          description: Dashboard stats retrieved
+      summary: Get dashboard statistics
+      tags:
+      - User Management
+  /api/users/notifications/preferences:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_users_notifications_preferences_get_200_response"
+          description: Notification preferences retrieved
+      summary: Get notification preferences
+      tags:
+      - User Management
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_users_notifications_preferences_get_200_response"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Preferences updated successfully
+      summary: Update notification preferences
+      tags:
+      - User Management
+  /api/users/activity:
+    get:
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: per_page
+        required: false
+        schema:
+          default: 20
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_users_activity_get_200_response"
+          description: Activity log retrieved
+      summary: Get user activity log
+      tags:
+      - User Management
+  /api/users/delete-account:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_users_delete_account_post_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Account deleted successfully
+      summary: Delete user account
+      tags:
+      - User Management
+  /api/billing/plans:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/BillingPlan"
+                type: array
+          description: Billing plans retrieved
+      summary: Get available billing plans
+      tags:
+      - Billing & Subscriptions
+  /api/billing/subscription:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+          description: Current subscription retrieved
+      summary: Get current subscription
+      tags:
+      - Billing & Subscriptions
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_billing_subscription_put_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+          description: Subscription updated successfully
+      summary: Update subscription
+      tags:
+      - Billing & Subscriptions
+  /api/billing/subscribe:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_billing_subscribe_post_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+          description: Subscription created successfully
+      summary: Create new subscription
+      tags:
+      - Billing & Subscriptions
+  /api/billing/subscription/cancel:
+    post:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Subscription cancelled successfully
+      summary: Cancel subscription
+      tags:
+      - Billing & Subscriptions
+  /api/billing/subscription/resume:
+    post:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+          description: Subscription resumed successfully
+      summary: Resume cancelled subscription
+      tags:
+      - Billing & Subscriptions
+  /api/billing/history:
+    get:
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: perPage
+        required: false
+        schema:
+          default: 20
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_billing_history_get_200_response"
+          description: Billing history retrieved
+      summary: Get billing history
+      tags:
+      - Billing & Subscriptions
+  /api/billing/upcoming-invoice:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_billing_upcoming_invoice_get_200_response"
+          description: Upcoming invoice retrieved
+      summary: Get upcoming invoice
+      tags:
+      - Billing & Subscriptions
+  /api/billing/payment-method:
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_billing_payment_method_put_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Payment method updated successfully
+      summary: Update default payment method
+      tags:
+      - Billing & Subscriptions
+  /api/billing/payment-methods:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/_api_billing_payment_methods_get_200_response_inner"
+                type: array
+          description: Payment methods retrieved
+      summary: Get all payment methods
+      tags:
+      - Billing & Subscriptions
+  /api/billing/payment-methods/{id}:
+    delete:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Payment method deleted successfully
+      summary: Delete payment method
+      tags:
+      - Billing & Subscriptions
+  /api/billing/setup-intent:
+    post:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_billing_setup_intent_post_200_response"
+          description: Setup intent created
+      summary: Create setup intent for payment method
+      tags:
+      - Billing & Subscriptions
+  /api/billing/usage:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_billing_usage_get_200_response"
+          description: Usage details retrieved
+      summary: Get billing usage details
+      tags:
+      - Billing & Subscriptions
+  /api/videos:
+    get:
+      parameters:
+      - explode: true
+        in: query
+        name: page
+        required: false
+        schema:
+          default: 1
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: per_page
+        required: false
+        schema:
+          default: 20
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: status
+        required: false
+        schema:
+          enum:
+          - uploaded
+          - processing
+          - completed
+          - failed
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_videos_get_200_response"
+          description: Videos retrieved
+      summary: Get user videos
+      tags:
+      - Video Management
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_videos_post_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+          description: Video created successfully
+      summary: Create new video
+      tags:
+      - Video Management
+  /api/videos/{id}:
+    delete:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Video deleted successfully
+      summary: Delete video
+      tags:
+      - Video Management
+    get:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+          description: Video retrieved
+      summary: Get video by ID
+      tags:
+      - Video Management
+    put:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_videos__id__put_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+          description: Video updated successfully
+      summary: Update video
+      tags:
+      - Video Management
+  /api/videos/upload-url:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/_api_videos_upload_url_post_request"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_videos_upload_url_post_200_response"
+          description: Upload URL generated
+      summary: Get pre-signed upload URL
+      tags:
+      - Video Management
+  /api/videos/upload:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/_api_videos_upload_post_request"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+          description: Video uploaded successfully
+      summary: Upload video file
+      tags:
+      - Video Management
+  /api/videos/{id}/dub:
+    post:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DubRequest"
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_videos__id__dub_post_202_response"
+          description: Dubbing process started
+      summary: Start video dubbing process
+      tags:
+      - Video Management
+  /api/videos/{id}/status:
+    get:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobStatus"
+          description: Processing status retrieved
+      summary: Get video processing status
+      tags:
+      - Video Management
+  /api/videos/{id}/cancel:
+    post:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_auth_forgot_password_post_200_response"
+          description: Processing cancelled
+      summary: Cancel video processing
+      tags:
+      - Video Management
+  /api/videos/{id}/download:
+    get:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      - explode: true
+        in: query
+        name: language
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_videos__id__download_get_200_response"
+          description: Download URL generated
+      summary: Download processed video
+      tags:
+      - Video Management
+  /api/videos/{id}/duplicate:
+    post:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+          description: Video duplicated successfully
+      summary: Duplicate video
+      tags:
+      - Video Management
+  /api/videos/{id}/thumbnail:
+    post:
+      parameters:
+      - explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: uuid
+          type: string
+        style: simple
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/_api_videos__id__thumbnail_post_request"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/_api_videos__id__thumbnail_post_200_response"
+          description: Thumbnail generated successfully
+      summary: Generate or update video thumbnail
+      tags:
+      - Video Management
+  /api/videos/languages:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Language"
+                type: array
+          description: Supported languages retrieved
+      summary: Get supported languages
+      tags:
+      - Video Management
+  /api/videos/voices:
+    get:
+      parameters:
+      - explode: true
+        in: query
+        name: language
+        required: true
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Voice"
+                type: array
+          description: Available voices retrieved
+      summary: Get available voices for language
+      tags:
+      - Video Management
+
+components:
+  schemas:
+    User:
+      example:
+        full_name: full_name
+        avatar_url: https://openapi-generator.tech
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        email: email
+        username: username
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        email:
+          format: email
+          title: email
+          type: string
+        username:
+          title: username
+          type: string
+        full_name:
+          title: full_name
+          type: string
+        avatar_url:
+          format: uri
+          title: avatar_url
+          type: string
+        created_at:
+          format: date-time
+          title: created_at
+          type: string
+        updated_at:
+          format: date-time
+          title: updated_at
+          type: string
+      title: User
+      type: object
+    LoginRequest:
+      example:
+        password: password
+        email: email
+      properties:
+        email:
+          format: email
+          title: email
+          type: string
+        password:
+          minLength: 8
+          title: password
+          type: string
+      required:
+      - email
+      - password
+      title: LoginRequest
+      type: object
+    SignupRequest:
+      example:
+        password: password
+        full_name: full_name
+        email: email
+        username: username
+      properties:
+        email:
+          format: email
+          title: email
+          type: string
+        password:
+          minLength: 8
+          title: password
+          type: string
+        username:
+          title: username
+          type: string
+        full_name:
+          title: full_name
+          type: string
+      required:
+      - email
+      - password
+      - username
+      title: SignupRequest
+      type: object
+    AuthResponse:
+      example:
+        access_token: access_token
+        token_type: bearer
+        expires_in: 0
+        user:
+          full_name: full_name
+          avatar_url: https://openapi-generator.tech
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          email: email
+          username: username
+      properties:
+        access_token:
+          title: access_token
+          type: string
+        token_type:
+          example: bearer
+          title: token_type
+          type: string
+        expires_in:
+          title: expires_in
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+      title: AuthResponse
+      type: object
+    Video:
+      example:
+        duration: 0.8008281904610115
+        original_language: original_language
+        target_languages:
+        - target_languages
+        - target_languages
+        video_url: https://openapi-generator.tech
+        updated_at: 2000-01-23T04:56:07.000+00:00
+        description: description
+        created_at: 2000-01-23T04:56:07.000+00:00
+        id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+        title: title
+        thumbnail_url: https://openapi-generator.tech
+        status: uploaded
+      properties:
+        id:
+          format: uuid
+          title: id
+          type: string
+        title:
+          title: title
+          type: string
+        description:
+          title: description
+          type: string
+        duration:
+          title: duration
+          type: number
+        original_language:
+          title: original_language
+          type: string
+        target_languages:
+          items:
+            type: string
+          title: target_languages
+          type: array
+        status:
+          enum:
+          - uploaded
+          - processing
+          - completed
+          - failed
+          title: status
+          type: string
+        thumbnail_url:
+          format: uri
+          title: thumbnail_url
+          type: string
+        video_url:
+          format: uri
+          title: video_url
+          type: string
+        created_at:
+          format: date-time
+          title: created_at
+          type: string
+        updated_at:
+          format: date-time
+          title: updated_at
+          type: string
+      title: Video
+      type: object
+    DubRequest:
+      example:
+        voice_id: voice_id
+        target_language: target_language
+        preserve_background_music: true
+      properties:
+        target_language:
+          title: target_language
+          type: string
+        voice_id:
+          title: voice_id
+          type: string
+        preserve_background_music:
+          default: true
+          title: preserve_background_music
+          type: boolean
+      required:
+      - target_language
+      - voice_id
+      title: DubRequest
+      type: object
+    JobStatus:
+      example:
+        error_message: error_message
+        estimated_completion: 2000-01-23T04:56:07.000+00:00
+        job_id: job_id
+        progress: 8.008281904610115
+        status: pending
+      properties:
+        job_id:
+          title: job_id
+          type: string
+        status:
+          enum:
+          - pending
+          - processing
+          - completed
+          - failed
+          - cancelled
+          title: status
+          type: string
+        progress:
+          maximum: 100
+          minimum: 0
+          title: progress
+          type: number
+        estimated_completion:
+          format: date-time
+          title: estimated_completion
+          type: string
+        error_message:
+          title: error_message
+          type: string
+      title: JobStatus
+      type: object
+    BillingPlan:
+      example:
+        billing_period: monthly
+        features:
+        - features
+        - features
+        price: 0.8008281904610115
+        name: name
+        currency: currency
+        id: id
+        credits_included: 6
+      properties:
+        id:
+          title: id
+          type: string
+        name:
+          title: name
+          type: string
+        price:
+          title: price
+          type: number
+        currency:
+          title: currency
+          type: string
+        billing_period:
+          enum:
+          - monthly
+          - yearly
+          title: billing_period
+          type: string
+        credits_included:
+          title: credits_included
+          type: integer
+        features:
+          items:
+            type: string
+          title: features
+          type: array
+      title: BillingPlan
+      type: object
+    Subscription:
+      example:
+        cancel_at_period_end: true
+        id: id
+        current_period_end: 2000-01-23T04:56:07.000+00:00
+        plan_id: plan_id
+        current_period_start: 2000-01-23T04:56:07.000+00:00
+        status: active
+      properties:
+        id:
+          title: id
+          type: string
+        plan_id:
+          title: plan_id
+          type: string
+        status:
+          enum:
+          - active
+          - cancelled
+          - past_due
+          - unpaid
+          title: status
+          type: string
+        current_period_start:
+          format: date-time
+          title: current_period_start
+          type: string
+        current_period_end:
+          format: date-time
+          title: current_period_end
+          type: string
+        cancel_at_period_end:
+          title: cancel_at_period_end
+          type: boolean
+      title: Subscription
+      type: object
+    Language:
+      example:
+        code: code
+        name: name
+        native_name: native_name
+      properties:
+        code:
+          title: code
+          type: string
+        name:
+          title: name
+          type: string
+        native_name:
+          title: native_name
+          type: string
+      title: Language
+      type: object
+    Voice:
+      example:
+        gender: male
+        preview_url: https://openapi-generator.tech
+        name: name
+        language: language
+        style: style
+        id: id
+      properties:
+        id:
+          title: id
+          type: string
+        name:
+          title: name
+          type: string
+        language:
+          title: language
+          type: string
+        gender:
+          enum:
+          - male
+          - female
+          - neutral
+          title: gender
+          type: string
+        style:
+          title: style
+          type: string
+        preview_url:
+          format: uri
+          title: preview_url
+          type: string
+      title: Voice
+      type: object
+    Error:
+      example:
+        details: "{}"
+        error: error
+        message: message
+      properties:
+        error:
+          title: error
+          type: string
+        message:
+          title: message
+          type: string
+        details:
+          title: details
+          type: object
+      title: Error
+      type: object
+    _api_auth_forgot_password_post_request:
+      properties:
+        email:
+          format: email
+          title: email
+          type: string
+      required:
+      - email
+      title: _api_auth_forgot_password_post_request
+      type: object
+    _api_auth_forgot_password_post_200_response:
+      example:
+        message: message
+      properties:
+        message:
+          title: message
+          type: string
+      title: _api_auth_forgot_password_post_200_response
+      type: object
+    _api_auth_reset_password_post_request:
+      properties:
+        token:
+          title: token
+          type: string
+        new_password:
+          minLength: 8
+          title: new_password
+          type: string
+      required:
+      - new_password
+      - token
+      title: _api_auth_reset_password_post_request
+      type: object
+    _api_users_profile_put_request:
+      properties:
+        username:
+          title: username
+          type: string
+        full_name:
+          title: full_name
+          type: string
+        email:
+          format: email
+          title: email
+          type: string
+      title: _api_users_profile_put_request
+      type: object
+    _api_users_password_put_request:
+      properties:
+        current_password:
+          title: current_password
+          type: string
+        new_password:
+          minLength: 8
+          title: new_password
+          type: string
+      required:
+      - current_password
+      - new_password
+      title: _api_users_password_put_request
+      type: object
+    _api_users_avatar_post_request:
+      properties:
+        avatar:
+          format: binary
+          type: string
+      type: object
+    _api_users_avatar_post_200_response:
+      example:
+        avatar_url: https://openapi-generator.tech
+      properties:
+        avatar_url:
+          format: uri
+          title: avatar_url
+          type: string
+      title: _api_users_avatar_post_200_response
+      type: object
+    _api_users_credits_usage_get_200_response:
+      example:
+        total_credits: 0
+        used_credits: 6
+        remaining_credits: 1
+        current_period_end: 2000-01-23T04:56:07.000+00:00
+        current_period_start: 2000-01-23T04:56:07.000+00:00
+      properties:
+        total_credits:
+          title: total_credits
+          type: integer
+        used_credits:
+          title: used_credits
+          type: integer
+        remaining_credits:
+          title: remaining_credits
+          type: integer
+        current_period_start:
+          format: date-time
+          title: current_period_start
+          type: string
+        current_period_end:
+          format: date-time
+          title: current_period_end
+          type: string
+      title: _api_users_credits_usage_get_200_response
+      type: object
+    _api_users_dashboard_stats_get_200_response:
+      example:
+        completed_videos: 6
+        total_duration: 5.962133916683182
+        total_videos: 0
+        processing_videos: 1
+        credits_used_this_month: 5
+      properties:
+        total_videos:
+          title: total_videos
+          type: integer
+        completed_videos:
+          title: completed_videos
+          type: integer
+        processing_videos:
+          title: processing_videos
+          type: integer
+        total_duration:
+          title: total_duration
+          type: number
+        credits_used_this_month:
+          title: credits_used_this_month
+          type: integer
+      title: _api_users_dashboard_stats_get_200_response
+      type: object
+    _api_users_notifications_preferences_get_200_response:
+      example:
+        marketing_emails: true
+        email_notifications: true
+        processing_complete: true
+        billing_updates: true
+      properties:
+        email_notifications:
+          title: email_notifications
+          type: boolean
+        processing_complete:
+          title: processing_complete
+          type: boolean
+        billing_updates:
+          title: billing_updates
+          type: boolean
+        marketing_emails:
+          title: marketing_emails
+          type: boolean
+      title: _api_users_notifications_preferences_get_200_response
+      type: object
+    _api_users_activity_get_200_response_activities_inner:
+      example:
+        action: action
+        description: description
+        id: id
+        timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        id:
+          title: id
+          type: string
+        action:
+          title: action
+          type: string
+        description:
+          title: description
+          type: string
+        timestamp:
+          format: date-time
+          title: timestamp
+          type: string
+      title: _api_users_activity_get_200_response_activities_inner
+      type: object
+    _api_users_activity_get_200_response:
+      example:
+        pagination: "{}"
+        activities:
+        - action: action
+          description: description
+          id: id
+          timestamp: 2000-01-23T04:56:07.000+00:00
+        - action: action
+          description: description
+          id: id
+          timestamp: 2000-01-23T04:56:07.000+00:00
+      properties:
+        activities:
+          items:
+            $ref: "#/components/schemas/_api_users_activity_get_200_response_activities_inner"
+          title: activities
+          type: array
+        pagination:
+          title: pagination
+          type: object
+      title: _api_users_activity_get_200_response
+      type: object
+    _api_users_delete_account_post_request:
+      properties:
+        password:
+          title: password
+          type: string
+      required:
+      - password
+      title: _api_users_delete_account_post_request
+      type: object
+    _api_billing_subscription_put_request:
+      properties:
+        plan_id:
+          title: plan_id
+          type: string
+      required:
+      - plan_id
+      title: _api_billing_subscription_put_request
+      type: object
+    _api_billing_subscribe_post_request:
+      properties:
+        plan_id:
+          title: plan_id
+          type: string
+        payment_method_id:
+          title: payment_method_id
+          type: string
+      required:
+      - payment_method_id
+      - plan_id
+      title: _api_billing_subscribe_post_request
+      type: object
+    _api_billing_history_get_200_response_invoices_inner:
+      example:
+        amount: 0.8008281904610115
+        created_at: 2000-01-23T04:56:07.000+00:00
+        currency: currency
+        id: id
+        status: status
+      properties:
+        id:
+          title: id
+          type: string
+        amount:
+          title: amount
+          type: number
+        currency:
+          title: currency
+          type: string
+        status:
+          title: status
+          type: string
+        created_at:
+          format: date-time
+          title: created_at
+          type: string
+      title: _api_billing_history_get_200_response_invoices_inner
+      type: object
+    _api_billing_history_get_200_response:
+      example:
+        pagination: "{}"
+        invoices:
+        - amount: 0.8008281904610115
+          created_at: 2000-01-23T04:56:07.000+00:00
+          currency: currency
+          id: id
+          status: status
+        - amount: 0.8008281904610115
+          created_at: 2000-01-23T04:56:07.000+00:00
+          currency: currency
+          id: id
+          status: status
+      properties:
+        invoices:
+          items:
+            $ref: "#/components/schemas/_api_billing_history_get_200_response_invoices_inner"
+          title: invoices
+          type: array
+        pagination:
+          title: pagination
+          type: object
+      title: _api_billing_history_get_200_response
+      type: object
+    _api_billing_upcoming_invoice_get_200_response:
+      example:
+        period_end: 2000-01-23T04:56:07.000+00:00
+        amount: 0.8008281904610115
+        period_start: 2000-01-23T04:56:07.000+00:00
+        currency: currency
+      properties:
+        amount:
+          title: amount
+          type: number
+        currency:
+          title: currency
+          type: string
+        period_start:
+          format: date-time
+          title: period_start
+          type: string
+        period_end:
+          format: date-time
+          title: period_end
+          type: string
+      title: _api_billing_upcoming_invoice_get_200_response
+      type: object
+    _api_billing_payment_method_put_request:
+      properties:
+        payment_method_id:
+          title: payment_method_id
+          type: string
+      required:
+      - payment_method_id
+      title: _api_billing_payment_method_put_request
+      type: object
+    _api_billing_payment_methods_get_200_response_inner:
+      example:
+        last4: last4
+        id: id
+        type: type
+        is_default: true
+        brand: brand
+      properties:
+        id:
+          title: id
+          type: string
+        type:
+          title: type
+          type: string
+        last4:
+          title: last4
+          type: string
+        brand:
+          title: brand
+          type: string
+        is_default:
+          title: is_default
+          type: boolean
+      title: _api_billing_payment_methods_get_200_response_inner
+      type: object
+    _api_billing_setup_intent_post_200_response:
+      example:
+        client_secret: client_secret
+      properties:
+        client_secret:
+          title: client_secret
+          type: string
+      title: _api_billing_setup_intent_post_200_response
+      type: object
+    _api_billing_usage_get_200_response:
+      example:
+        included_credits: 6
+        overage_credits: 1
+        current_period_usage: 0
+        overage_cost: 5.962133916683182
+      properties:
+        current_period_usage:
+          title: current_period_usage
+          type: integer
+        included_credits:
+          title: included_credits
+          type: integer
+        overage_credits:
+          title: overage_credits
+          type: integer
+        overage_cost:
+          title: overage_cost
+          type: number
+      title: _api_billing_usage_get_200_response
+      type: object
+    _api_videos_get_200_response:
+      example:
+        pagination: "{}"
+        videos:
+        - duration: 0.8008281904610115
+          original_language: original_language
+          target_languages:
+          - target_languages
+          - target_languages
+          video_url: https://openapi-generator.tech
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          title: title
+          thumbnail_url: https://openapi-generator.tech
+          status: uploaded
+        - duration: 0.8008281904610115
+          original_language: original_language
+          target_languages:
+          - target_languages
+          - target_languages
+          video_url: https://openapi-generator.tech
+          updated_at: 2000-01-23T04:56:07.000+00:00
+          description: description
+          created_at: 2000-01-23T04:56:07.000+00:00
+          id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+          title: title
+          thumbnail_url: https://openapi-generator.tech
+          status: uploaded
+      properties:
+        videos:
+          items:
+            $ref: "#/components/schemas/Video"
+          title: videos
+          type: array
+        pagination:
+          title: pagination
+          type: object
+      title: _api_videos_get_200_response
+      type: object
+    _api_videos_post_request:
+      properties:
+        title:
+          title: title
+          type: string
+        description:
+          title: description
+          type: string
+        original_language:
+          title: original_language
+          type: string
+      required:
+      - title
+      title: _api_videos_post_request
+      type: object
+    _api_videos__id__put_request:
+      properties:
+        title:
+          title: title
+          type: string
+        description:
+          title: description
+          type: string
+      title: _api_videos__id__put_request
+      type: object
+    _api_videos_upload_url_post_request:
+      properties:
+        filename:
+          title: filename
+          type: string
+        content_type:
+          title: content_type
+          type: string
+      required:
+      - content_type
+      - filename
+      title: _api_videos_upload_url_post_request
+      type: object
+    _api_videos_upload_url_post_200_response:
+      example:
+        upload_url: https://openapi-generator.tech
+        video_id: 046b6c7f-0b8a-43b9-b35d-6489e6daee91
+      properties:
+        upload_url:
+          format: uri
+          title: upload_url
+          type: string
+        video_id:
+          format: uuid
+          title: video_id
+          type: string
+      title: _api_videos_upload_url_post_200_response
+      type: object
+    _api_videos_upload_post_request:
+      properties:
+        file:
+          format: binary
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+      type: object
+    _api_videos__id__dub_post_202_response:
+      example:
+        job_id: job_id
+        message: message
+      properties:
+        job_id:
+          title: job_id
+          type: string
+        message:
+          title: message
+          type: string
+      title: _api_videos__id__dub_post_202_response
+      type: object
+    _api_videos__id__download_get_200_response:
+      example:
+        expires_at: 2000-01-23T04:56:07.000+00:00
+        download_url: https://openapi-generator.tech
+      properties:
+        download_url:
+          format: uri
+          title: download_url
+          type: string
+        expires_at:
+          format: date-time
+          title: expires_at
+          type: string
+      title: _api_videos__id__download_get_200_response
+      type: object
+    _api_videos__id__thumbnail_post_request:
+      properties:
+        thumbnail:
+          format: binary
+          type: string
+        timestamp:
+          description: Time in seconds to extract thumbnail from video
+          type: number
+      type: object
+    _api_videos__id__thumbnail_post_200_response:
+      example:
+        thumbnail_url: https://openapi-generator.tech
+      properties:
+        thumbnail_url:
+          format: uri
+          title: thumbnail_url
+          type: string
+      title: _api_videos__id__thumbnail_post_200_response
+      type: object
+
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

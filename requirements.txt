@@ -1,0 +1,56 @@
+# FastAPI Backend Dependencies
+
+# Web Framework & Server
+fastapi
+uvicorn[standard]
+gunicorn
+python-multipart
+
+# Request/Response Handling
+pydantic[email]
+pydantic-settings
+typing-extensions
+
+# Database & ORM
+psycopg2-binary
+asyncpg
+sqlalchemy
+alembic
+databases[postgresql]
+boto3
+
+# Authentication & Security
+python-jose[cryptography]
+cryptography
+python-decouple
+passlib[bcrypt]
+fastapi-jwt-auth
+
+# Task Queue & Background Processing
+celery[redis]
+kombu
+flower
+
+# File Handling & Media Processing
+aiofiles
+python-magic
+ffmpeg-python
+pydub
+Pillow
+
+# HTTP Client & External APIs
+httpx
+aiohttp
+requests
+
+# Testing & Development
+pytest
+pytest-asyncio
+pytest-cov
+
+# Monitoring & Logging
+healthcheck
+
+# Environment & Configuration
+python-dotenv
+environs
