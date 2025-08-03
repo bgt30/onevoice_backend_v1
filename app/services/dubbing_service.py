@@ -160,9 +160,6 @@ class DubbingService:
             workspace = await DubbingService._setup_workspace(job)
             os.chdir(workspace)
             
-            # AI 설정 준비
-            await DubbingService._prepare_ai_config(job)
-            
             # Job Steps 생성
             await DubbingService._create_job_steps(db, job_id)
             
@@ -285,8 +282,8 @@ class DubbingService:
         # 소스 비디오 다운로드
         await DubbingService._download_source_video(job, workspace)
         
-        # 커스텀 용어 파일 복사 (존재하는 경우)
-        await DubbingService._copy_custom_terms(workspace)
+        # AI 모듈이 필요한 설정 파일들 복사
+        await DubbingService._copy_config_files(workspace)
         
         return workspace
 
@@ -309,9 +306,9 @@ class DubbingService:
             # S3에서 비디오 다운로드
             video_content = await storage_service.download_file(video.file_path)
             
-            # 로컬에 저장 (AI 모듈들이 찾을 수 있도록)
+            # AI 모듈이 찾을 수 있도록 output/ 디렉터리에 저장
             video_filename = f"source_video{Path(video.file_path).suffix}"
-            local_video_path = f"{workspace}/{video_filename}"
+            local_video_path = f"{workspace}/output/{video_filename}"
             
             with open(local_video_path, 'wb') as f:
                 f.write(video_content)
@@ -320,102 +317,27 @@ class DubbingService:
             raise Exception(f"소스 비디오 다운로드 실패: {str(e)}")
 
     @staticmethod
-    async def _copy_custom_terms(workspace: str) -> None:
-        """커스텀 용어 파일 복사"""
+    async def _copy_config_files(workspace: str) -> None:
+        """AI 모듈이 필요한 설정 파일들을 workspace에 복사"""
         try:
-            # 프로젝트 루트의 custom_terms.xlsx 복사
-            root_custom_terms = "custom_terms.xlsx"
-            workspace_custom_terms = f"{workspace}/custom_terms.xlsx"
+            # config.yaml 복사 (필수)
+            source_config = "config.yaml"
+            workspace_config = f"{workspace}/config.yaml"
             
-            if os.path.exists(root_custom_terms):
-                shutil.copy2(root_custom_terms, workspace_custom_terms)
-                
-        except Exception:
-            # 커스텀 용어 파일이 없어도 계속 진행
-            pass
-
-    @staticmethod
-    async def _prepare_ai_config(job: Job) -> None:
-        """AI 모듈 설정 준비"""
-        try:
-            # AI 설정 모듈 동적 import
-            config_utils = importlib.import_module("ai.utils.config_utils")
-            update_key = config_utils.update_key
-            load_key = config_utils.load_key
+            if os.path.exists(source_config):
+                shutil.copy2(source_config, workspace_config)
+            else:
+                raise Exception("config.yaml 파일을 찾을 수 없습니다.")
             
-            # Job 설정에서 AI 설정 업데이트
-            job_config = job.job_config or {}
+            # custom_terms.xlsx 복사 (선택적)
+            source_terms = "custom_terms.xlsx"
+            workspace_terms = f"{workspace}/custom_terms.xlsx"
             
-            # config.yaml의 기존 값을 읽어와서 job_config에서 지정된 값만 덮어쓰기
-            
-            # 언어 설정 (job_config > config.yaml)
-            target_language = job_config.get("target_language") or load_key("target_language")
-            # 언어 코드 정규화 (kr -> ko 등)
-            language_mapping = {"kr": "ko", "cn": "zh", "jp": "ja"}
-            target_language = language_mapping.get(target_language, target_language)
-            update_key("target_language", target_language)
-            
-            # TTS 방법 설정 (job_config > config.yaml)
-            tts_method = job_config.get("tts_method") or load_key("tts_method")
-            update_key("tts_method", tts_method)
-            
-            # 음성 ID 설정 (TTS 방법에 따라 다름)
-            if "voice_id" in job_config:
-                voice_id = job_config["voice_id"]
-                
-                # TTS 방법별로 적절한 키에 설정
-                if tts_method == "openai_tts":
-                    update_key("openai_tts.voice", voice_id)
-                elif tts_method == "azure_tts":
-                    update_key("azure_tts.voice", voice_id)
-                elif tts_method == "edge_tts":
-                    update_key("edge_tts.voice", voice_id)
-                elif tts_method == "sf_fish_tts":
-                    update_key("sf_fish_tts.voice", voice_id)
-                elif tts_method == "fish_tts":
-                    update_key("fish_tts.character", voice_id)
-                elif tts_method == "gpt_sovits":
-                    update_key("gpt_sovits.character", voice_id)
-                
-            # 배경음악 보존 설정 (job_config > config.yaml)
-            preserve_bg = job_config.get("preserve_background_music")
-            if preserve_bg is not None:
-                update_key("demucs", preserve_bg)
-            
-            # Whisper 설정
-            update_key("whisper.language", target_language)
-            # detected_language도 설정 (일부 AI 모듈에서 사용)
-            update_key("whisper.detected_language", target_language)
-            
-            # API 키 설정 (환경변수나 settings에서 가져와야 할 수도 있음)
-            # 현재는 config.yaml의 기본값 사용
-            
-            # 더빙 품질 관련 설정들 (config.yaml 기본값 사용)
-            # - speed_factor (오디오 속도 조절)
-            # - subtitle 관련 설정들
-            # - tolerance 관련 설정들
-            
-            # 더빙 작업에 필수적인 설정들 확인 및 강제 적용
-            try:
-                subtitle_burn = load_key("burn_subtitles")
-                if not subtitle_burn:
-                    update_key("burn_subtitles", True)  # 더빙에는 자막 번인 필수
-            except KeyError:
-                update_key("burn_subtitles", True)
-                
-            # 안전한 기본값들 설정 (config.yaml에 없는 경우)
-            try:
-                load_key("max_workers")
-            except KeyError:
-                update_key("max_workers", 2)  # 안전한 기본값
-                
-            try:
-                load_key("ffmpeg_gpu")
-            except KeyError:
-                update_key("ffmpeg_gpu", False)  # 호환성을 위해 비활성화
+            if os.path.exists(source_terms):
+                shutil.copy2(source_terms, workspace_terms)
                 
         except Exception as e:
-            raise Exception(f"AI 설정 준비 실패: {str(e)}")
+            raise Exception(f"설정 파일 복사 실패: {str(e)}")
 
     @staticmethod
     async def _create_job_steps(db: AsyncSession, job_id: str) -> None:

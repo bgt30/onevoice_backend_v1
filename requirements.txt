@@ -28,9 +28,9 @@ passlib[bcrypt]
 fastapi-jwt-auth
 
 # Task Queue & Background Processing
-celery[redis]
-kombu
-flower
+# celery[redis]
+# kombu
+# flower
 
 # File Handling & Media Processing
 aiofiles

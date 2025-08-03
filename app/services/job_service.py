@@ -177,8 +177,7 @@ class JobService:
     @staticmethod
     async def start_job(
         db: AsyncSession,
-        job_id: str,
-        celery_task_id: Optional[str] = None
+        job_id: str
     ) -> bool:
         """작업 시작"""
         result = await db.execute(select(Job).where(Job.id == job_id))
@@ -190,10 +189,6 @@ class JobService:
         job.status = "processing"
         job.started_at = datetime.now(timezone.utc)
         job.progress = 0.0
-        
-        if celery_task_id:
-            job.celery_task_id = celery_task_id
-            
         job.updated_at = datetime.now(timezone.utc)
         
         try:
@@ -314,7 +309,6 @@ class JobService:
         job.completed_at = None
         job.error_message = None
         job.error_code = None
-        job.celery_task_id = None
         job.updated_at = datetime.now(timezone.utc)
         
         try:

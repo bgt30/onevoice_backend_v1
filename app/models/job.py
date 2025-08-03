@@ -64,8 +64,7 @@ class Job(BaseModel):
     job_config: Mapped[Optional[dict]] = mapped_column(JSON)  # 작업 설정
     job_result: Mapped[Optional[dict]] = mapped_column(JSON)  # 작업 결과
     
-    # Celery 작업 ID
-    celery_task_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
+
     
     # 관계
     user: Mapped["User"] = relationship("User")

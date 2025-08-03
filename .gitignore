@@ -191,3 +191,5 @@ node_modules/
 *.sln
 *.sw?
 # OS specific
+
+.cursor/
