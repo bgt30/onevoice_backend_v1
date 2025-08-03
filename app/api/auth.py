@@ -4,13 +4,16 @@
 # - POST /api/auth/login
 # - POST /api/auth/logout
 # - POST /api/auth/reset-password
-# - POST /api/auth/signup
+# - POST /api/auth/signup (임시 저장 + 이메일 발송)
+# - POST /api/auth/verify-email (이메일 인증 + 계정 생성)
+# - POST /api/auth/resend-verification (인증 이메일 재발송)
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependecies import get_db, get_current_active_user
-from app.services.auth import AuthService
+from app.services.auth_service import AuthService
+from app.services.notification_service import NotificationService
 from app.core.security import create_reset_token, verify_reset_token
 from app.models.user import User
 from app.schemas import (
@@ -51,8 +54,12 @@ async def forgot_password(
     # 비밀번호 재설정 토큰 생성
     reset_token = create_reset_token(user.email)
     
-    # TODO: 실제 이메일 발송 로직 구현
-    # send_password_reset_email(user.email, reset_token)
+    # 비밀번호 재설정 이메일 발송
+    try:
+        await NotificationService.send_password_reset_email(user, reset_token)
+    except Exception as e:
+        # 이메일 발송 실패해도 사용자에게는 성공 메시지 (보안상)
+        print(f"비밀번호 재설정 이메일 발송 실패: {str(e)}")
     
     return ForgotPasswordResponse(
         message="비밀번호 재설정 이메일이 발송되었습니다."
@@ -140,17 +147,109 @@ async def reset_password(
 
 @router.post(
     "/signup",
-    status_code=status.HTTP_201_CREATED,
     responses={
-        201: {"model": AuthResponse, "description": "User created successfully"},
+        200: {"model": ForgotPasswordResponse, "description": "Registration request submitted, awaiting email verification"},
         400: {"model": Error, "description": "Invalid input data or user already exists"},
+        500: {"model": Error, "description": "Email sending failed"},
     },
-    summary="User registration",
+    summary="User registration - Email verification required",
     response_model_by_alias=True,
 )
 async def signup(
     signup_request: SignupRequest = Body(..., description=""),
     db: AsyncSession = Depends(get_db)
+) -> ForgotPasswordResponse:
+    """User registration - 이메일 인증 대기 상태로 임시 저장"""
+    try:
+        # 임시 사용자 생성 (실제 계정 생성 안함)
+        pending_user, verification_token = await AuthService.create_pending_user(db, signup_request)
+        
+        # 회원가입 인증 이메일 발송
+        try:
+            # 임시 사용자 정보로 User 객체 생성 (이메일 발송용)
+            temp_user = type('TempUser', (), {
+                'email': pending_user.email,
+                'username': pending_user.username,
+                'full_name': pending_user.full_name
+            })()
+            
+            await NotificationService.send_signup_verification_email(temp_user, verification_token)
+            
+        except Exception as e:
+            # 이메일 발송 실패 시 임시 사용자도 삭제
+            await db.delete(pending_user)
+            await db.commit()
+            print(f"회원가입 인증 이메일 발송 실패: {str(e)}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="인증 이메일 발송에 실패했습니다. 다시 시도해주세요."
+            )
+        
+        return ForgotPasswordResponse(
+            message="회원가입 신청이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요."
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"회원가입 처리 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@router.post(
+    "/verify-email",
+    responses={
+        200: {"model": AuthResponse, "description": "Email verified successfully, account created"},
+        400: {"model": Error, "description": "Invalid or expired verification token"},
+        500: {"model": Error, "description": "Account creation failed"},
+    },
+    summary="Email verification and account creation",
+    response_model_by_alias=True,
+)
+async def verify_email(
+    token: str = Body(..., description="Email verification token"),
+    db: AsyncSession = Depends(get_db)
 ) -> AuthResponse:
-    """User registration"""
-    return await AuthService.create_user(db, signup_request) 
+    """이메일 인증 완료 및 실제 계정 생성"""
+    return await AuthService.verify_email_and_create_user(db, token)
+
+
+@router.post(
+    "/resend-verification",
+    responses={
+        200: {"model": ForgotPasswordResponse, "description": "Verification email resent"},
+        404: {"model": Error, "description": "Registration request not found"},
+        400: {"model": Error, "description": "Registration expired"},
+    },
+    summary="Resend email verification",
+    response_model_by_alias=True,
+)
+async def resend_verification_email(
+    email: str = Body(..., description="Email address"),
+    db: AsyncSession = Depends(get_db)
+) -> ForgotPasswordResponse:
+    """이메일 인증 재발송"""
+    try:
+        pending_user, verification_token = await AuthService.resend_verification_email(db, email)
+        
+        # 이메일 발송
+        temp_user = type('TempUser', (), {
+            'email': pending_user.email,
+            'username': pending_user.username,
+            'full_name': pending_user.full_name
+        })()
+        
+        await NotificationService.send_signup_verification_email(temp_user, verification_token)
+        
+        return ForgotPasswordResponse(
+            message="인증 이메일이 재발송되었습니다. 이메일을 확인해주세요."
+        )
+        
+    except Exception as e:
+        print(f"인증 이메일 재발송 실패: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="인증 이메일 재발송에 실패했습니다."
+        ) 

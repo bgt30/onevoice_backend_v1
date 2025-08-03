@@ -96,6 +96,46 @@ class Settings(BaseSettings):
     DEFAULT_FREE_CREDITS: int = Field(default=100, description="신규 사용자 기본 무료 크레딧")
     CREDIT_COST_PER_MINUTE: int = Field(default=10, description="분당 크레딧 비용")
     
+    # 프론트엔드 URL (이메일 링크용)
+    FRONTEND_URL: str = Field(default="http://localhost:3000", env="FRONTEND_URL", description="프론트엔드 URL")
+    
+    # 언어 및 음성 설정
+    SUPPORTED_LANGUAGES: List[dict] = Field(
+        default=[
+            {"code": "en", "name": "English", "native_name": "English"},
+            {"code": "ko", "name": "Korean", "native_name": "한국어"},
+            {"code": "ja", "name": "Japanese", "native_name": "日本語"},
+            {"code": "zh", "name": "Chinese", "native_name": "中文"},
+            {"code": "es", "name": "Spanish", "native_name": "Español"},
+            {"code": "fr", "name": "French", "native_name": "Français"},
+            {"code": "de", "name": "German", "native_name": "Deutsch"},
+            {"code": "it", "name": "Italian", "native_name": "Italiano"},
+            {"code": "pt", "name": "Portuguese", "native_name": "Português"},
+            {"code": "ru", "name": "Russian", "native_name": "Русский"},
+        ],
+        description="지원 언어 목록"
+    )
+    
+    AVAILABLE_VOICES: dict = Field(
+        default={
+            "en": [
+                {"id": "en_voice_1", "name": "Sarah", "language": "en", "gender": "female", "style": "professional"},
+                {"id": "en_voice_2", "name": "John", "language": "en", "gender": "male", "style": "casual"},
+                {"id": "en_voice_3", "name": "Emma", "language": "en", "gender": "female", "style": "warm"},
+            ],
+            "ko": [
+                {"id": "ko_voice_1", "name": "지민", "language": "ko", "gender": "female", "style": "professional"},
+                {"id": "ko_voice_2", "name": "태형", "language": "ko", "gender": "male", "style": "casual"},
+                {"id": "ko_voice_3", "name": "아이유", "language": "ko", "gender": "female", "style": "warm"},
+            ],
+            "ja": [
+                {"id": "ja_voice_1", "name": "Yuki", "language": "ja", "gender": "female", "style": "professional"},
+                {"id": "ja_voice_2", "name": "Hiroshi", "language": "ja", "gender": "male", "style": "casual"},
+            ],
+        },
+        description="언어별 사용 가능한 음성 목록"
+    )
+    
 
 
 

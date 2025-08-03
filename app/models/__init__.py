@@ -4,7 +4,8 @@ from .user import User, Subscription
 from .billing import BillingHistory, CreditUsage
 from .video import Video, MediaFile
 from .job import Job, JobStep
-from .notification import UserNotification
+
+from .pending_user import PendingUser
 
 __all__ = [
     "Base",
@@ -16,5 +17,6 @@ __all__ = [
     "MediaFile",
     "Job",
     "JobStep",
-    "UserNotification"
+
+    "PendingUser"
 ] 

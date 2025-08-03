@@ -18,6 +18,7 @@ sqlalchemy
 alembic
 databases[postgresql]
 boto3
+botocore
 
 # Authentication & Security
 python-jose[cryptography]
@@ -43,6 +44,9 @@ httpx
 aiohttp
 requests
 
+# Payment Processing
+stripe
+
 # Testing & Development
 pytest
 pytest-asyncio
@@ -54,3 +58,23 @@ healthcheck
 # Environment & Configuration
 python-dotenv
 environs
+
+# AI & Audio Processing (for dubbing pipeline)
+rich
+pandas
+librosa
+soundfile
+torch
+demucs
+spacy
+opencv-python
+numpy
+ruamel.yaml
+yt-dlp
+
+# Email & Templates
+jinja2
+
+# NLP Models (download separately after installation)
+# python -m spacy download en_core_web_sm
+# python -m spacy download ko_core_news_sm

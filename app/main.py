@@ -11,7 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # API 라우터 임포트
-from app.api import auth, billing, jobs, notifications, users, videos
+from app.api import auth, billing, jobs, users, videos
 
 # 모니터링 및 설정 임포트
 from monitoring.health_check import router as health_router
@@ -63,6 +63,49 @@ async def lifespan(app: FastAPI):
             logger.info("📊 개발환경 데이터베이스 준비 완료")
         except Exception as e:
             logger.warning(f"⚠️  테이블 생성 확인 실패: {e}")
+    
+    # 중단된 더빙 작업 복구
+    try:
+        from app.services.job_service import JobService
+        from app.services.dubbing_service import DubbingService
+        from app.core.database import get_async_session
+        
+        async for db in get_async_session():
+            # processing 상태로 남은 더빙 작업들 찾기
+            interrupted_jobs = await JobService.get_pending_jobs(db, job_type="dubbing")
+            processing_jobs = [job for job in interrupted_jobs if job.status == "processing"]
+            
+            if processing_jobs:
+                logger.info(f"🔄 중단된 더빙 작업 {len(processing_jobs)}개를 복구합니다...")
+                
+                # 백그라운드에서 재시작
+                import asyncio
+                for job in processing_jobs:
+                    asyncio.create_task(DubbingService.resume_dubbing_pipeline(job.id))
+                
+                logger.info("✅ 더빙 작업 복구 완료")
+            else:
+                logger.info("ℹ️  복구할 더빙 작업이 없습니다.")
+            break
+            
+    except Exception as e:
+        logger.warning(f"⚠️  더빙 작업 복구 실패: {e}")
+    
+    # 만료된 임시 회원가입 정보 정리
+    try:
+        from app.services.auth_service import AuthService
+        from app.core.database import get_async_session
+        
+        async for db in get_async_session():
+            cleaned_count = await AuthService.cleanup_expired_pending_users(db)
+            if cleaned_count > 0:
+                logger.info(f"🧹 만료된 임시 회원가입 정보 {cleaned_count}개를 정리했습니다.")
+            else:
+                logger.info("ℹ️  정리할 만료된 임시 회원가입 정보가 없습니다.")
+            break
+            
+    except Exception as e:
+        logger.warning(f"⚠️  임시 회원가입 정보 정리 실패: {e}")
     
     yield
     
@@ -193,8 +236,8 @@ app.include_router(jobs.router)
 # 결제/구독
 app.include_router(billing.router)
 
-# 알림 (향후 확장)
-app.include_router(notifications.router)
+# 알림은 이메일로만 처리 (NotificationService)
+
 
 # 헬스체크 및 모니터링
 app.include_router(health_router)

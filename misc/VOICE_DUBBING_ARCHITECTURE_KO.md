@@ -308,7 +308,6 @@ class S3AccessControl:
 ### 연결 고리
 
 - **API 엔드포인트** → `POST /api/videos/{id}/dub` → `process_video_dubbing.delay()`
-- **Celery 태스크** → **ai/ 모듈** → **상태 업데이트**
 
 ⸻
 
@@ -317,7 +316,6 @@ class S3AccessControl:
 ### 연결 고리
 
 - **FastAPI 엔드포인트** → **BackgroundTasks**
-- **Celery Workers** → **AI 모듈들** → **상태 업데이트**
 
 ⸻
 

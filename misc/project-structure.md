@@ -11,8 +11,7 @@ onevoice_backend_v1/
 │   │   ├──  users.py                  # 사용자 관리 (12개)
 │   │   ├──  billing.py                # 결제/구독 (13개)
 │   │   ├──  videos.py                 # 비디오 관리 (17개)
-│   │   ├──  jobs.py                   # 작업 상태/관리
-│   │   └──  notifications.py          # 알림
+│   │   └──  jobs.py                   # 작업 상태/관리
 │   │
 │   ├──  models/                       # SQLAlchemy ORM 모델
 │   │   ├──  __init__.py
@@ -21,7 +20,7 @@ onevoice_backend_v1/
 │   │   ├──  billing.py                # billing_history, credit_usage
 │   │   ├──  video.py                  # videos, media_files
 │   │   ├──  job.py                    # jobs, job_steps
-│   │   └──  notification.py           # user_notifications
+│   │   └──  pending_user.py           # pending_user
 │   │
 │   ├──  services/                     # 비즈니스 로직 서비스
 │   │   ├──  __init__.py
@@ -48,21 +47,9 @@ onevoice_backend_v1/
 ├──  db/                               # 데이터베이스 관련
 │   ├──  __init__.py
 │   ├──  migrations/                   # Alembic 마이그레이션
-│   │   └──  versions/
-│   ├──  alembic.ini
-│   └──  migration_env.py
-│
-├──  storage/                          # 파일 저장소 관리
-│   ├──  __init__.py
-│   ├──  s3_client.py                 # S3 클라이언트
-│   ├──  file_manager.py              # 파일 관리 유틸
-│   └──  access_control.py            # 파일 접근 제어
-│
-├──  shared/                           # 공유 계약/스키마
-│   ├──  __init__.py
-│   ├──  contracts.py                 # API 계약 정의
-│   ├──  enums.py                     # 공통 Enum 타입
-│   └──  constants.py                 # 상수 정의
+│   │   ├──  versions/
+│   │   └──  env.py
+│   └──  alembic.ini
 │
 ├──  monitoring/                       # 관찰 가능성
 │   ├──  __init__.py

@@ -16,7 +16,7 @@
 # - GET /api/videos/voices
 
 
-from fastapi import APIRouter, Body, Depends, Form, HTTPException, Path, Query, status
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Path, Query, status, UploadFile, File, BackgroundTasks
 from pydantic import Field, StrictBytes, StrictFloat, StrictInt, StrictStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Tuple, Union
@@ -24,6 +24,8 @@ from typing_extensions import Annotated
 
 from app.dependecies import get_db, get_current_active_user, check_credits
 from app.models.user import User as UserModel
+from app.services.video_service import VideoService
+from app.services.dubbing_service import DubbingService
 from app.schemas import (
     ForgotPasswordResponse,
     VideosResponse,
@@ -59,8 +61,7 @@ async def get_videos(
     db: AsyncSession = Depends(get_db)
 ) -> VideosResponse:
     """Get user videos with pagination and filtering"""
-    # TODO: Implement get videos logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.get_videos(db, current_user, page or 1, per_page or 20, status)
 
 
 @router.post(
@@ -77,8 +78,7 @@ async def create_video(
     db: AsyncSession = Depends(get_db)
 ) -> Video:
     """Create new video entry"""
-    # TODO: Implement create video logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.create_video(db, current_user, request)
 
 
 @router.get(
@@ -95,8 +95,7 @@ async def get_video(
     db: AsyncSession = Depends(get_db)
 ) -> Video:
     """Get video details by ID"""
-    # TODO: Implement get video logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.get_video(db, current_user, id)
 
 
 @router.put(
@@ -114,8 +113,7 @@ async def update_video(
     db: AsyncSession = Depends(get_db)
 ) -> Video:
     """Update video metadata"""
-    # TODO: Implement update video logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.update_video(db, current_user, id, request)
 
 
 @router.delete(
@@ -132,8 +130,7 @@ async def delete_video(
     db: AsyncSession = Depends(get_db)
 ) -> ForgotPasswordResponse:
     """Delete video permanently"""
-    # TODO: Implement delete video logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.delete_video(db, current_user, id)
 
 
 @router.post(
@@ -145,15 +142,14 @@ async def delete_video(
     response_model_by_alias=True,
 )
 async def upload_video(
-    file: Optional[Union[StrictBytes, StrictStr, Tuple[StrictStr, StrictBytes]]] = Form(None, description=""),
-    title: Optional[StrictStr] = Form(None, description=""),
-    description: Optional[StrictStr] = Form(None, description=""),
+    file: UploadFile = File(..., description="Video file to upload"),
+    title: StrictStr = Form(..., description="Video title"),
+    description: Optional[StrictStr] = Form(None, description="Video description"),
     current_user: UserModel = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ) -> Video:
     """Upload video file directly"""
-    # TODO: Implement upload video logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.upload_video(db, current_user, file, title, description)
 
 
 @router.post(
@@ -170,8 +166,7 @@ async def get_upload_url(
     db: AsyncSession = Depends(get_db)
 ) -> UploadUrlResponse:
     """Get pre-signed URL for direct S3 upload"""
-    # TODO: Implement get upload URL logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.get_upload_url(db, current_user, request)
 
 
 @router.get(
@@ -189,8 +184,7 @@ async def download_video(
     db: AsyncSession = Depends(get_db)
 ) -> DownloadResponse:
     """Get download URL for processed video"""
-    # TODO: Implement download video logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.get_download_url(db, current_user, id, language)
 
 
 @router.post(
@@ -202,14 +196,23 @@ async def download_video(
     response_model_by_alias=True,
 )
 async def start_dubbing(
+    background_tasks: BackgroundTasks,
     id: StrictStr = Path(..., description=""),
     dub_request: DubRequest = Body(..., description=""),
     current_user: UserModel = Depends(check_credits),  # 크레딧 체크 필요
     db: AsyncSession = Depends(get_db)
 ) -> DubResponse:
     """Start video dubbing process"""
-    # TODO: Implement start dubbing logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    # 1. VideoService로 Job 생성
+    dub_response = await VideoService.start_dubbing(db, current_user, id, dub_request)
+    
+    # 2. DubbingService를 BackgroundTasks로 실행
+    background_tasks.add_task(
+        DubbingService.execute_dubbing_pipeline,
+        dub_response.job_id
+    )
+    
+    return dub_response
 
 
 @router.post(
@@ -226,8 +229,7 @@ async def duplicate_video(
     db: AsyncSession = Depends(get_db)
 ) -> Video:
     """Create a copy of existing video"""
-    # TODO: Implement duplicate video logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.duplicate_video(db, current_user, id)
 
 
 
@@ -241,14 +243,13 @@ async def duplicate_video(
 )
 async def update_thumbnail(
     id: StrictStr = Path(..., description=""),
-    thumbnail: Optional[Union[StrictBytes, StrictStr, Tuple[StrictStr, StrictBytes]]] = Form(None, description=""),
+    thumbnail: Optional[UploadFile] = File(None, description="Thumbnail image file"),
     timestamp: Annotated[Optional[Union[StrictFloat, StrictInt]], Field(description="Time in seconds to extract thumbnail from video")] = Form(None, description="Time in seconds to extract thumbnail from video"),
     current_user: UserModel = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ) -> ThumbnailUploadResponse:
     """Generate or update video thumbnail"""
-    # TODO: Implement update thumbnail logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.update_thumbnail(db, current_user, id, thumbnail, timestamp)
 
 
 @router.get(
@@ -263,8 +264,7 @@ async def get_languages(
     # 공개 엔드포인트 - 인증 불필요
 ) -> List[Language]:
     """Get list of supported languages for dubbing"""
-    # TODO: Implement get languages logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.get_supported_languages()
 
 
 @router.get(
@@ -280,8 +280,7 @@ async def get_voices(
     # 공개 엔드포인트 - 인증 불필요
 ) -> List[Voice]:
     """Get available voices for specified language"""
-    # TODO: Implement get voices logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    return await VideoService.get_available_voices(language)
 
 
  

@@ -27,6 +27,7 @@ from app.schemas import (
     Subscription as SubscriptionSchema,
     ForgotPasswordResponse
 )
+from app.services.storage_service import storage_service
 
 
 class UserService:
@@ -134,17 +135,41 @@ class UserService:
         avatar_file: UploadFile
     ) -> AvatarUploadResponse:
         """사용자 아바타 업로드"""
-        # TODO: 실제 파일 업로드 로직 구현 (S3 연동)
-        # 현재는 임시 URL 반환
-        avatar_url = f"https://example.com/avatars/{user.id}/{avatar_file.filename}"
-        
-        user.avatar_url = avatar_url
-        user.updated_at = datetime.now(timezone.utc)
+        # 파일 타입 검증
+        allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+        if not await storage_service.validate_file_type(avatar_file, allowed_types):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="지원되지 않는 이미지 형식입니다. JPEG, PNG, GIF, WEBP만 지원됩니다."
+            )
 
         try:
+            # 기존 아바타 삭제
+            if user.avatar_url:
+                # URL에서 파일 키 추출
+                old_key = user.avatar_url.split('/')[-1] if '/' in user.avatar_url else None
+                if old_key:
+                    old_file_key = f"avatars/{user.id}/{old_key}"
+                    await storage_service.delete_file(old_file_key)
+
+            # 새 아바타 업로드
+            file_key = storage_service.generate_file_key(
+                user_id=user.id,
+                file_type="avatars", 
+                filename=avatar_file.filename
+            )
+            
+            avatar_url = await storage_service.upload_file(
+                file=avatar_file,
+                file_key=file_key
+            )
+            
+            user.avatar_url = avatar_url
+            user.updated_at = datetime.now(timezone.utc)
+
             await db.commit()
             return AvatarUploadResponse(avatar_url=avatar_url)
-        except Exception:
+        except Exception as e:
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -157,12 +182,23 @@ class UserService:
         user: User
     ) -> ForgotPasswordResponse:
         """사용자 아바타 삭제"""
-        # TODO: 실제 파일 삭제 로직 구현 (S3에서 삭제)
-        
-        user.avatar_url = None
-        user.updated_at = datetime.now(timezone.utc)
-
         try:
+            # S3에서 아바타 파일 삭제
+            if user.avatar_url:
+                # URL에서 파일 키 추출 (더 정확한 방법)
+                if user.avatar_url.startswith("http"):
+                    # URL에서 파일 키 추출
+                    parts = user.avatar_url.split('/')
+                    if len(parts) >= 3:
+                        file_key = '/'.join(parts[-3:])  # avatars/user_id/filename
+                        await storage_service.delete_file(file_key)
+                else:
+                    # 상대 경로인 경우
+                    await storage_service.delete_file(user.avatar_url)
+
+            user.avatar_url = None
+            user.updated_at = datetime.now(timezone.utc)
+
             await db.commit()
             return ForgotPasswordResponse(message="아바타가 성공적으로 삭제되었습니다.")
         except Exception:

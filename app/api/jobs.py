@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependecies import get_db, get_current_active_user
 from app.models.user import User as UserModel
+from app.services.job_service import JobService
+from app.services.dubbing_service import DubbingService
 from app.schemas import (
     ForgotPasswordResponse,
     JobStatus
@@ -31,8 +33,15 @@ async def get_job_status(
     db: AsyncSession = Depends(get_db)
 ) -> JobStatus:
     """Get video processing job status"""
-    # TODO: Implement get job status logic
-    raise HTTPException(status_code=501, detail="Not implemented")
+    job_status = await JobService.get_job_status_for_video(db, id, current_user.id)
+    
+    if not job_status:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="작업을 찾을 수 없습니다."
+        )
+    
+    return job_status
 
 
 @router.post(
@@ -49,5 +58,38 @@ async def cancel_job(
     db: AsyncSession = Depends(get_db)
 ) -> ForgotPasswordResponse:
     """Cancel video processing job"""
-    # TODO: Implement cancel job logic
-    raise HTTPException(status_code=501, detail="Not implemented") 
+    # 비디오의 최신 작업 찾기
+    jobs = await JobService.get_jobs_by_video(db, id, current_user.id)
+    
+    if not jobs:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="작업을 찾을 수 없습니다."
+        )
+    
+    # 가장 최근 진행 중인 작업 찾기
+    active_job = None
+    for job in jobs:
+        if job.status in ["pending", "processing"]:
+            active_job = job
+            break
+    
+    if not active_job:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="취소할 수 있는 진행 중인 작업이 없습니다."
+        )
+    
+    # 더빙 작업인 경우 DubbingService 사용
+    if active_job.job_type == "dubbing":
+        success = await DubbingService.cancel_dubbing_job(db, active_job.id, current_user.id)
+    else:
+        success = await JobService.cancel_job(db, active_job.id, current_user.id)
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="작업 취소 중 오류가 발생했습니다."
+        )
+    
+    return ForgotPasswordResponse(message="작업이 성공적으로 취소되었습니다.") 
