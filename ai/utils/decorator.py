@@ -1,6 +1,5 @@
 import functools
 import time
-import os
 from rich import print as rprint
 
 # ------------------------------
@@ -8,6 +7,15 @@ from rich import print as rprint
 # ------------------------------
 
 def except_handler(error_msg, retry=0, delay=1, default_return=None):
+    """
+    Exception handler decorator with retry functionality
+    
+    Args:
+        error_msg: Error message to display
+        retry: Number of retry attempts
+        delay: Base delay between retries (will be exponential)
+        default_return: Default value to return on final failure
+    """
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -25,25 +33,3 @@ def except_handler(error_msg, retry=0, delay=1, default_return=None):
                     time.sleep(delay * (2**i))
         return wrapper
     return decorator
-
-
-# ------------------------------
-# check file exists decorator
-# ------------------------------
-
-def check_file_exists(file_path):
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if os.path.exists(file_path):
-                rprint(f"[yellow]⚠️ File <{file_path}> already exists, skip <{func.__name__}> step.[/yellow]")
-                return
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-if __name__ == "__main__":
-    @except_handler("function execution failed", retry=3, delay=1)
-    def test_function():
-        raise Exception("test exception")
-    test_function()

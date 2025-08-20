@@ -70,7 +70,6 @@ spacy
 opencv-python
 numpy
 ruamel.yaml
-yt-dlp
 
 # Email & Templates
 jinja2

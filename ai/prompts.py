@@ -3,8 +3,8 @@ from ai.utils import *
 
 ## ================================================================
 # @ step4_splitbymeaning.py
-def get_split_prompt(sentence, num_parts = 2, word_limit = 20):
-    language = load_key("whisper.detected_language")
+def get_split_prompt(sentence, num_parts = 2, word_limit = 20, config_path: str = None):
+    language = load_key("whisper.detected_language", config_path)
     split_prompt = f"""
 ## Role
 You are a professional Netflix subtitle splitter in **{language}**.
@@ -50,9 +50,9 @@ Note: Start you answer with ```json and end with ```, do not add any other text.
 
 ## ================================================================
 # @ step4_1_summarize.py
-def get_summary_prompt(source_content, custom_terms_json=None):
-    src_lang = load_key("whisper.detected_language")
-    tgt_lang = load_key("target_language")
+def get_summary_prompt(source_content, custom_terms_json=None, config_path: str = None):
+    src_lang = load_key("whisper.detected_language", config_path)
+    tgt_lang = load_key("target_language", config_path)
     
     # add custom terms note
     terms_note = ""
@@ -141,26 +141,26 @@ def generate_shared_prompt(previous_content_prompt, after_content_prompt, summar
 ### Points to Note
 {things_to_note_prompt}'''
 
-def get_prompt_faithfulness(lines, shared_prompt):
-    TARGET_LANGUAGE = load_key("target_language")
+def get_prompt_faithfulness(lines, shared_prompt, config_path: str = None):
+    target_language = load_key("target_language", config_path)
     # Split lines by \n
     line_splits = lines.split('\n')
     
     json_dict = {}
     for i, line in enumerate(line_splits, 1):
-        json_dict[f"{i}"] = {"origin": line, "direct": f"direct {TARGET_LANGUAGE} translation {i}."}
+        json_dict[f"{i}"] = {"origin": line, "direct": f"direct {target_language} translation {i}."}
     json_format = json.dumps(json_dict, indent=2, ensure_ascii=False)
 
-    src_language = load_key("whisper.detected_language")
+    src_language = load_key("whisper.detected_language", config_path)
     prompt_faithfulness = f'''
 ## Role
-You are a professional Netflix subtitle translator, fluent in both {src_language} and {TARGET_LANGUAGE}, as well as their respective cultures. 
-Your expertise lies in accurately understanding the semantics and structure of the original {src_language} text and faithfully translating it into {TARGET_LANGUAGE} while preserving the original meaning.
+You are a professional Netflix subtitle translator, fluent in both {src_language} and {target_language}, as well as their respective cultures. 
+Your expertise lies in accurately understanding the semantics and structure of the original {src_language} text and faithfully translating it into {target_language} while preserving the original meaning.
 
 ## Task
-We have a segment of original {src_language} subtitles that need to be directly translated into {TARGET_LANGUAGE}. These subtitles come from a specific context and may contain specific themes and terminology.
+We have a segment of original {src_language} subtitles that need to be directly translated into {target_language}. These subtitles come from a specific context and may contain specific themes and terminology.
 
-1. Translate the original {src_language} subtitles into {TARGET_LANGUAGE} line by line
+1. Translate the original {src_language} subtitles into {target_language} line by line
 2. Ensure the translation is faithful to the original, accurately conveying the original meaning
 3. Consider the context and professional terminology
 
@@ -187,8 +187,8 @@ Note: Start you answer with ```json and end with ```, do not add any other text.
     return prompt_faithfulness.strip()
 
 
-def get_prompt_expressiveness(faithfulness_result, lines, shared_prompt):
-    TARGET_LANGUAGE = load_key("target_language")
+def get_prompt_expressiveness(faithfulness_result, lines, shared_prompt, config_path: str = None):
+    target_language = load_key("target_language", config_path)
     json_format = {
         key: {
             "origin": value["origin"],
@@ -200,15 +200,15 @@ def get_prompt_expressiveness(faithfulness_result, lines, shared_prompt):
     }
     json_format = json.dumps(json_format, indent=2, ensure_ascii=False)
 
-    src_language = load_key("whisper.detected_language")
+    src_language = load_key("whisper.detected_language", config_path)
     prompt_expressiveness = f'''
 ## Role
 You are a professional Netflix subtitle translator and language consultant.
-Your expertise lies not only in accurately understanding the original {src_language} but also in optimizing the {TARGET_LANGUAGE} translation to better suit the target language's expression habits and cultural background.
+Your expertise lies not only in accurately understanding the original {src_language} but also in optimizing the {target_language} translation to better suit the target language's expression habits and cultural background.
 
 ## Task
 We already have a direct translation version of the original {src_language} subtitles.
-Your task is to reflect on and improve these direct translations to create more natural and fluent {TARGET_LANGUAGE} subtitles.
+Your task is to reflect on and improve these direct translations to create more natural and fluent {target_language} subtitles.
 
 1. Analyze the direct translation results line by line, pointing out existing issues
 2. Provide detailed modification suggestions
@@ -226,9 +226,9 @@ Please use a two-step thinking process to handle the text line by line:
    - Check if the language style is consistent with the original text
    - Check the conciseness of the subtitles, point out where the translation is too wordy
 
-2. {TARGET_LANGUAGE} Free Translation:
-   - Aim for contextual smoothness and naturalness, conforming to {TARGET_LANGUAGE} expression habits
-   - Ensure it's easy for {TARGET_LANGUAGE} audience to understand and accept
+2. {target_language} Free Translation:
+   - Aim for contextual smoothness and naturalness, conforming to {target_language} expression habits
+   - Ensure it's easy for {target_language} audience to understand and accept
    - Adapt the language style to match the theme (e.g., use casual language for tutorials, professional terminology for technical content, formal language for documentaries)
 </Translation Analysis Steps>
    
@@ -246,12 +246,11 @@ Note: Start you answer with ```json and end with ```, do not add any other text.
 '''
     return prompt_expressiveness.strip()
 
-
 ## ================================================================
 # @ step5_splitforsub.py
-def get_align_prompt(src_sub, tr_sub, src_part):
-    targ_lang = load_key("target_language")
-    src_lang = load_key("whisper.detected_language")
+def get_align_prompt(src_sub, tr_sub, src_part, config_path: str = None):
+    targ_lang = load_key("target_language", config_path)
+    src_lang = load_key("whisper.detected_language", config_path)
     src_splits = src_part.split('\n')
     num_parts = len(src_splits)
     src_part = src_part.replace('\n', ' [br] ')

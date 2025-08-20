@@ -43,8 +43,10 @@ class StorageService:
     ) -> str:
         """S3 업로드용 프리사인드 URL 생성"""
         if not self.use_s3:
-            # S3를 사용하지 않는 경우 로컬 개발용 URL 반환
-            return f"http://localhost:8000/uploads/{file_key}"
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
 
         try:
             url = self.s3_client.generate_presigned_url(
@@ -71,8 +73,10 @@ class StorageService:
     ) -> str:
         """S3 다운로드용 프리사인드 URL 생성"""
         if not self.use_s3:
-            # S3를 사용하지 않는 경우 로컬 개발용 URL 반환
-            return f"http://localhost:8000/downloads/{file_key}"
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
 
         try:
             params = {
@@ -104,8 +108,10 @@ class StorageService:
     ) -> str:
         """파일을 S3에 직접 업로드"""
         if not self.use_s3:
-            # S3를 사용하지 않는 경우 로컬 저장
-            return await self._save_file_locally(file, file_key)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
 
         if content_type is None:
             content_type = file.content_type or 'application/octet-stream'
@@ -135,11 +141,90 @@ class StorageService:
             # 파일 포인터를 처음으로 되돌리기
             await file.seek(0)
 
+    async def upload_local_file(
+        self,
+        local_path: str,
+        file_key: str,
+        content_type: Optional[str] = None
+    ) -> str:
+        """로컬 경로의 파일을 S3에 업로드 (AI 파이프라인 산출물 업로드용)
+
+        Args:
+            local_path: 업로드할 로컬 파일 경로
+            file_key: 스토리지에 저장할 키(경로)
+            content_type: 콘텐츠 타입 (지정하지 않으면 파일 확장자 기반 추정)
+
+        Returns:
+            업로드된 파일의 공개 URL (S3)
+        """
+        if not os.path.exists(local_path):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"업로드할 파일을 찾을 수 없습니다: {local_path}"
+            )
+
+        if not self.use_s3:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
+
+        if content_type is None:
+            content_type = mimetypes.guess_type(local_path)[0] or 'application/octet-stream'
+
+        try:
+            extra_args = { 'ServerSideEncryption': 'AES256' }
+            if content_type:
+                extra_args['ContentType'] = content_type
+            # boto3 upload_file은 비동기가 아니지만, 내부적으로 블로킹 호출을 수행
+            # 여기서는 단순 업로드이므로 그대로 사용
+            self.s3_client.upload_file(
+                Filename=local_path,
+                Bucket=settings.S3_BUCKET_NAME,
+                Key=file_key,
+                ExtraArgs=extra_args
+            )
+            return f"https://{settings.S3_BUCKET_NAME}.s3.{settings.AWS_REGION}.amazonaws.com/{file_key}"
+        except ClientError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"파일 업로드 실패: {str(e)}"
+            )
+
+    async def download_file(self, file_key: str, destination_path: str) -> bool:
+        """스토리지에서 파일을 다운로드하여 로컬 경로에 저장
+
+        Args:
+            file_key: 스토리지의 파일 키
+            destination_path: 저장할 로컬 경로
+
+        Returns:
+            성공 여부
+        """
+        os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+
+        if not self.use_s3:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
+
+        try:
+            self.s3_client.download_file(settings.S3_BUCKET_NAME, file_key, destination_path)
+            return True
+        except ClientError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"파일 다운로드 실패: {str(e)}"
+            )
+
     async def delete_file(self, file_key: str) -> bool:
         """S3에서 파일 삭제"""
         if not self.use_s3:
-            # 로컬 파일 삭제
-            return await self._delete_file_locally(file_key)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
 
         try:
             self.s3_client.delete_object(
@@ -159,7 +244,10 @@ class StorageService:
     async def file_exists(self, file_key: str) -> bool:
         """파일 존재 여부 확인"""
         if not self.use_s3:
-            return await self._file_exists_locally(file_key)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
 
         try:
             self.s3_client.head_object(
@@ -173,7 +261,10 @@ class StorageService:
     async def get_file_size(self, file_key: str) -> Optional[int]:
         """파일 크기 조회"""
         if not self.use_s3:
-            return await self._get_file_size_locally(file_key)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
 
         try:
             response = self.s3_client.head_object(
@@ -187,7 +278,10 @@ class StorageService:
     async def copy_file(self, source_key: str, destination_key: str) -> bool:
         """파일 복사"""
         if not self.use_s3:
-            return await self._copy_file_locally(source_key, destination_key)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="S3가 구성되어 있지 않습니다."
+            )
 
         try:
             copy_source = {
@@ -264,56 +358,6 @@ class StorageService:
                 return False
                 
         return True
-
-    # 로컬 개발용 메소드들 (S3를 사용하지 않을 때)
-    async def _save_file_locally(self, file: UploadFile, file_key: str) -> str:
-        """로컬에 파일 저장"""
-        local_path = f"storage/{file_key}"
-        os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        
-        with open(local_path, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
-            
-        await file.seek(0)
-        return f"http://localhost:8000/storage/{file_key}"
-
-    async def _delete_file_locally(self, file_key: str) -> bool:
-        """로컬 파일 삭제"""
-        local_path = f"storage/{file_key}"
-        try:
-            if os.path.exists(local_path):
-                os.remove(local_path)
-            return True
-        except Exception:
-            return False
-
-    async def _file_exists_locally(self, file_key: str) -> bool:
-        """로컬 파일 존재 확인"""
-        local_path = f"storage/{file_key}"
-        return os.path.exists(local_path)
-
-    async def _get_file_size_locally(self, file_key: str) -> Optional[int]:
-        """로컬 파일 크기 조회"""
-        local_path = f"storage/{file_key}"
-        try:
-            return os.path.getsize(local_path)
-        except Exception:
-            return None
-
-    async def _copy_file_locally(self, source_key: str, destination_key: str) -> bool:
-        """로컬 파일 복사"""
-        source_path = f"storage/{source_key}"
-        dest_path = f"storage/{destination_key}"
-        
-        try:
-            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-            with open(source_path, 'rb') as src, open(dest_path, 'wb') as dst:
-                dst.write(src.read())
-            return True
-        except Exception:
-            return False
-
 
 # 전역 Storage Service 인스턴스
 storage_service = StorageService()

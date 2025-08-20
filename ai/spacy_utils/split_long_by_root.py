@@ -1,13 +1,13 @@
 import os
 import string
 import warnings
-from ai.spacy_utils.load_nlp_model import init_nlp, SPLIT_BY_CONNECTOR_FILE
+from ai.spacy_utils.load_nlp_model import init_nlp
 from ai.utils import *
-from ai.utils.path_constants import _3_1_SPLIT_BY_NLP
+from ai.utils.path_constants import get_3_1_split_by_nlp
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-def split_long_sentence(doc):
+def split_long_sentence(doc, config_path: str = None):
     tokens = [token.text for token in doc]
     n = len(tokens)
     
@@ -30,9 +30,9 @@ def split_long_sentence(doc):
     # rebuild sentences based on optimal split points
     sentences = []
     i = n
-    whisper_language = load_key("whisper.language")
-    language = load_key("whisper.detected_language") if whisper_language == 'auto' else whisper_language # consider force english case
-    joiner = get_joiner(language)
+    whisper_language = load_key("whisper.language", config_path)
+    language = load_key("whisper.detected_language", config_path) if whisper_language == 'auto' else whisper_language # consider force english case
+    joiner = get_joiner(language, config_path)
     while i > 0:
         j = prev[i]
         sentences.append(joiner.join(tokens[j:i]).strip())
@@ -40,7 +40,7 @@ def split_long_sentence(doc):
     
     return sentences[::-1]  # reverse list to keep original order
 
-def split_extremely_long_sentence(doc):
+def split_extremely_long_sentence(doc, config_path: str = None):
     tokens = [token.text for token in doc]
     n = len(tokens)
     
@@ -49,9 +49,9 @@ def split_extremely_long_sentence(doc):
     part_length = n // num_parts
     
     sentences = []
-    whisper_language = load_key("whisper.language")
-    language = load_key("whisper.detected_language") if whisper_language == 'auto' else whisper_language # consider force english case
-    joiner = get_joiner(language)
+    whisper_language = load_key("whisper.language", config_path)
+    language = load_key("whisper.detected_language", config_path) if whisper_language == 'auto' else whisper_language # consider force english case
+    joiner = get_joiner(language, config_path)
     for i in range(num_parts):
         start = i * part_length
         end = start + part_length if i < num_parts - 1 else n
@@ -61,17 +61,28 @@ def split_extremely_long_sentence(doc):
     return sentences
 
 
-def split_long_by_root_main(nlp):
-    with open(SPLIT_BY_CONNECTOR_FILE, "r", encoding="utf-8") as input_file:
+def split_long_by_root_main(nlp, workspace_path: str = ".", config_path: str = None):
+    """
+    긴 문장을 루트 기반으로 분할
+    
+    Args:
+        nlp: Spacy NLP model
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    split_by_connector_file = f"{workspace_path}/output/log/split_by_connector.txt"
+    output_file = get_3_1_split_by_nlp(workspace_path)
+    
+    with open(split_by_connector_file, "r", encoding="utf-8") as input_file:
         sentences = input_file.readlines()
 
     all_split_sentences = []
     for sentence in sentences:
         doc = nlp(sentence.strip())
         if len(doc) > 60:
-            split_sentences = split_long_sentence(doc)
+            split_sentences = split_long_sentence(doc, config_path)
             if any(len(nlp(sent)) > 60 for sent in split_sentences):
-                split_sentences = [subsent for sent in split_sentences for subsent in split_extremely_long_sentence(nlp(sent))]
+                split_sentences = [subsent for sent in split_sentences for subsent in split_extremely_long_sentence(nlp(sent), config_path)]
             all_split_sentences.extend(split_sentences)
             rprint(f"[yellow]✂️  Splitting long sentences by root: {sentence[:30]}...[/yellow]")
         else:
@@ -79,7 +90,7 @@ def split_long_by_root_main(nlp):
 
     punctuation = string.punctuation + "'" + '"'  # include all punctuation and apostrophe ' and "
 
-    with open(_3_1_SPLIT_BY_NLP, "w", encoding="utf-8") as output_file:
+    with open(output_file, "w", encoding="utf-8") as output_file_handle:
         for i, sentence in enumerate(all_split_sentences):
             stripped_sentence = sentence.strip()
             if not stripped_sentence or all(char in punctuation for char in stripped_sentence):
@@ -87,12 +98,12 @@ def split_long_by_root_main(nlp):
                 if i > 0:
                     all_split_sentences[i-1] += sentence
                 continue
-            output_file.write(sentence + "\n")
+            output_file_handle.write(sentence + "\n")
 
     # delete the original file
-    os.remove(SPLIT_BY_CONNECTOR_FILE)   
+    os.remove(split_by_connector_file)   
 
-    rprint(f"[green]💾 Long sentences split by root saved to →  {_3_1_SPLIT_BY_NLP}[/green]")
+    rprint(f"[green]💾 Long sentences split by root saved to →  {output_file}[/green]")
 
 if __name__ == "__main__":
     nlp = init_nlp()

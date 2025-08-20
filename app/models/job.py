@@ -115,6 +115,8 @@ class JobStep(BaseModel):
     
     # 진행률
     progress: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)  # 0.0 ~ 100.0
+    # 가중치(진행률 계산용)
+    weight: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
     
     # 타이밍
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

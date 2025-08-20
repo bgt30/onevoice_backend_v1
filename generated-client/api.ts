@@ -3894,59 +3894,7 @@ export const VideoManagementApiAxiosParamCreator = function (configuration?: Con
             };
         },
 
-        /**
-         * 
-         * @summary Upload video file
-         * @param {File} [file] 
-         * @param {string} [title] 
-         * @param {string} [description] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiVideosUploadPost: async (file?: File, title?: string, description?: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            const localVarPath = `/api/videos/upload`;
-            // use dummy base URL string because the URL constructor only accepts absolute URLs.
-            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
-            let baseOptions;
-            if (configuration) {
-                baseOptions = configuration.baseOptions;
-            }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
-            const localVarHeaderParameter = {} as any;
-            const localVarQueryParameter = {} as any;
-            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
-
-            // authentication bearerAuth required
-            // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration)
-
-
-            if (file !== undefined) { 
-                localVarFormParams.append('file', file as any);
-            }
-    
-            if (title !== undefined) { 
-                localVarFormParams.append('title', title as any);
-            }
-    
-            if (description !== undefined) { 
-                localVarFormParams.append('description', description as any);
-            }
-    
-    
-            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
-    
-            setSearchParams(localVarUrlObj, localVarQueryParameter);
-            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = localVarFormParams;
-
-            return {
-                url: toPathString(localVarUrlObj),
-                options: localVarRequestOptions,
-            };
-        },
         /**
          * 
          * @summary Get pre-signed upload URL
@@ -4215,21 +4163,7 @@ export const VideoManagementApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
 
-        /**
-         * 
-         * @summary Upload video file
-         * @param {File} [file] 
-         * @param {string} [title] 
-         * @param {string} [description] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        async apiVideosUploadPost(file?: File, title?: string, description?: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Video>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiVideosUploadPost(file, title, description, options);
-            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
-            const localVarOperationServerBasePath = operationServerMap['VideoManagementApi.apiVideosUploadPost']?.[localVarOperationServerIndex]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
-        },
+
         /**
          * 
          * @summary Get pre-signed upload URL
@@ -4404,18 +4338,7 @@ export const VideoManagementApiFactory = function (configuration?: Configuration
             return localVarFp.apiVideosPost(apiVideosPostRequest, options).then((request) => request(axios, basePath));
         },
 
-        /**
-         * 
-         * @summary Upload video file
-         * @param {File} [file] 
-         * @param {string} [title] 
-         * @param {string} [description] 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        apiVideosUploadPost(file?: File, title?: string, description?: string, options?: RawAxiosRequestConfig): AxiosPromise<Video> {
-            return localVarFp.apiVideosUploadPost(file, title, description, options).then((request) => request(axios, basePath));
-        },
+
         /**
          * 
          * @summary Get pre-signed upload URL
@@ -4611,19 +4534,7 @@ export class VideoManagementApi extends BaseAPI {
 
 
 
-    /**
-     * 
-     * @summary Upload video file
-     * @param {File} [file] 
-     * @param {string} [title] 
-     * @param {string} [description] 
-     * @param {*} [options] Override http request option.
-     * @throws {RequiredError}
-     * @memberof VideoManagementApi
-     */
-    public apiVideosUploadPost(file?: File, title?: string, description?: string, options?: RawAxiosRequestConfig) {
-        return VideoManagementApiFp(this.configuration).apiVideosUploadPost(file, title, description, options).then((request) => request(this.axios, this.basePath));
-    }
+
 
     /**
      * 

@@ -1,24 +1,22 @@
 import datetime
 import re
 import pandas as pd
+import os
 from rich.console import Console
 from rich.panel import Panel
 from ai.prompts import get_subtitle_trim_prompt
 from ai.tts_backend.estimate_duration import init_estimator, estimate_duration
 from ai.utils import *
-from ai.utils.path_constants import *
+from ai.utils.path_constants import get_8_1_audio_task, get_audio_dir
 
 console = Console()
-speed_factor = load_key("speed_factor")
 
-TRANS_SUBS_FOR_AUDIO_FILE = 'output/audio/trans_subs_for_audio.srt'
-SRC_SUBS_FOR_AUDIO_FILE = 'output/audio/src_subs_for_audio.srt'
-ESTIMATOR = None
-
-def check_len_then_trim(text, duration):
+def check_len_then_trim(text, duration, config_path: str = None):
     global ESTIMATOR
     if ESTIMATOR is None:
         ESTIMATOR = init_estimator()
+    
+    speed_factor = load_key("speed_factor", config_path)
     estimated_duration = estimate_duration(text, ESTIMATOR) / speed_factor['max']
     
     console.print(f"Subtitle text: {text}, "
@@ -33,7 +31,7 @@ def check_len_then_trim(text, duration):
                 return {'status': 'error', 'message': 'No result in response'}
             return {'status': 'success', 'message': ''}
         try:    
-            response = ask_gpt(prompt, resp_type='json', log_title='sub_trim', valid_def=valid_trim)
+            response = ask_gpt(prompt, resp_type='json', workspace_path=workspace_path, config_path=config_path, log_title='sub_trim', valid_def=valid_trim)
             shortened_text = response['result']
         except Exception:
             rprint("[bold red]🚫 AI refused to answer due to sensitivity, so manually remove punctuation[/bold red]")
@@ -49,13 +47,16 @@ def time_diff_seconds(t1, t2, base_date):
     dt2 = datetime.datetime.combine(base_date, t2)
     return (dt2 - dt1).total_seconds()
 
-def process_srt():
+def process_srt(workspace_path: str = ".", config_path: str = None):
     """Process srt file, generate audio tasks"""
+    audio_dir = get_audio_dir(workspace_path)
+    trans_subs_file = f"{audio_dir}/trans_subs_for_audio.srt"
+    src_subs_file = f"{audio_dir}/src_subs_for_audio.srt"
     
-    with open(TRANS_SUBS_FOR_AUDIO_FILE, 'r', encoding='utf-8') as file:
+    with open(trans_subs_file, 'r', encoding='utf-8') as file:
         content = file.read()
     
-    with open(SRC_SUBS_FOR_AUDIO_FILE, 'r', encoding='utf-8') as src_file:
+    with open(src_subs_file, 'r', encoding='utf-8') as src_file:
         src_content = src_file.read()
     
     subtitles = []
@@ -100,7 +101,7 @@ def process_srt():
     df = pd.DataFrame(subtitles)
     
     i = 0
-    MIN_SUB_DUR = load_key("min_subtitle_duration")
+    MIN_SUB_DUR = load_key("min_subtitle_duration", config_path)
     while i < len(df):
         today = datetime.date.today()
         if df.loc[i, 'duration'] < MIN_SUB_DUR:
@@ -132,12 +133,25 @@ def process_srt():
 
     return df
 
-@check_file_exists(_8_1_AUDIO_TASK)
-def gen_audio_task_main():
-    df = process_srt()
+def gen_audio_task_main(workspace_path: str = ".", config_path: str = None):
+    """
+    오디오 작업 설정
+    
+    Args:
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    output_file = get_8_1_audio_task(workspace_path)
+    
+    # Check if output file already exists
+    if os.path.exists(output_file):
+        print(f"Output file already exists: {output_file}")
+        return
+    
+    df = process_srt(workspace_path, config_path)
     console.print(df)
-    df.to_excel(_8_1_AUDIO_TASK, index=False)
-    rprint(Panel(f"Successfully generated {_8_1_AUDIO_TASK}", title="Success", border_style="green"))
+    df.to_excel(output_file, index=False)
+    rprint(Panel(f"Successfully generated {output_file}", title="Success", border_style="green"))
 
 if __name__ == '__main__':
     gen_audio_task_main()

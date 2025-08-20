@@ -5,13 +5,9 @@ from pydub import AudioSegment
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
 from rich.console import Console
 from ai.utils import *
-from ai.utils.path_constants import *
+from ai.utils.path_constants import get_8_1_audio_task, get_audio_segs_dir, get_output_dir
+
 console = Console()
-
-DUB_VOCAL_FILE = 'output/dub.mp3'
-
-DUB_SUB_FILE = 'output/dub.srt'
-OUTPUT_FILE_TEMPLATE = f"{_AUDIO_SEGS_DIR}/{{}}.wav"
 
 def load_and_flatten_data(excel_file):
     """Load and flatten Excel data"""
@@ -24,14 +20,17 @@ def load_and_flatten_data(excel_file):
     
     return df, lines, new_sub_times
 
-def get_audio_files(df):
+def get_audio_files(df, workspace_path: str = "."):
     """Generate a list of audio file paths"""
     audios = []
+    audio_segs_dir = get_audio_segs_dir(workspace_path)
+    output_file_template = f"{audio_segs_dir}/{{}}.wav"
+    
     for index, row in df.iterrows():
         number = row['number']
         line_count = len(eval(row['lines']) if isinstance(row['lines'], str) else row['lines'])
         for line_index in range(line_count):
-            temp_file = OUTPUT_FILE_TEMPLATE.format(f"{number}_{line_index}")
+            temp_file = output_file_template.format(f"{number}_{line_index}")
             audios.append(temp_file)
     return audios
 
@@ -82,10 +81,14 @@ def merge_audio_segments(audios, new_sub_times, sample_rate):
     
     return merged_audio
 
-def create_srt_subtitle():
-    df, lines, new_sub_times = load_and_flatten_data(_8_1_AUDIO_TASK)
+def create_srt_subtitle(workspace_path: str = ".", config_path: str = None):
+    excel_file = get_8_1_audio_task(workspace_path)
+    df, lines, new_sub_times = load_and_flatten_data(excel_file)
     
-    with open(DUB_SUB_FILE, 'w', encoding='utf-8') as f:
+    output_dir = get_output_dir(workspace_path)
+    dub_sub_file = f"{output_dir}/dub.srt"
+    
+    with open(dub_sub_file, 'w', encoding='utf-8') as f:
         for i, ((start_time, end_time), line) in enumerate(zip(new_sub_times, lines), 1):
             start_str = f"{int(start_time//3600):02d}:{int((start_time%3600)//60):02d}:{int(start_time%60):02d},{int((start_time*1000)%1000):03d}"
             end_str = f"{int(end_time//3600):02d}:{int((end_time%3600)//60):02d}:{int(end_time%60):02d},{int((end_time*1000)%1000):03d}"
@@ -94,22 +97,29 @@ def create_srt_subtitle():
             f.write(f"{start_str} --> {end_str}\n")
             f.write(f"{line}\n\n")
     
-    rprint(f"[bold green]✅ Subtitle file created: {DUB_SUB_FILE}[/bold green]")
+    rprint(f"[bold green]✅ Subtitle file created: {dub_sub_file}[/bold green]")
 
-def merge_full_audio():
-    """Main function: Process the complete audio merging process"""
+def merge_full_audio(workspace_path: str = ".", config_path: str = None):
+    """
+    오디오 병합
+    
+    Args:
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
     console.print("\n[bold cyan]🎬 Starting audio merging process...[/bold cyan]")
     
+    excel_file = get_8_1_audio_task(workspace_path)
     with console.status("[bold cyan]📊 Loading data from Excel...[/bold cyan]"):
-        df, lines, new_sub_times = load_and_flatten_data(_8_1_AUDIO_TASK)
+        df, lines, new_sub_times = load_and_flatten_data(excel_file)
     console.print("[bold green]✅ Data loaded successfully[/bold green]")
     
     with console.status("[bold cyan]🔍 Getting audio file list...[/bold cyan]"):
-        audios = get_audio_files(df)
+        audios = get_audio_files(df, workspace_path)
     console.print(f"[bold green]✅ Found {len(audios)} audio segments[/bold green]")
     
     with console.status("[bold cyan]📝 Generating subtitle file...[/bold cyan]"):
-        create_srt_subtitle()
+        create_srt_subtitle(workspace_path, config_path)
     
     if not os.path.exists(audios[0]):
         console.print(f"[bold red]❌ Error: First audio file {audios[0]} does not exist![/bold red]")
@@ -121,11 +131,14 @@ def merge_full_audio():
     console.print("[bold cyan]🔄 Starting audio merge process...[/bold cyan]")
     merged_audio = merge_audio_segments(audios, new_sub_times, sample_rate)
     
+    output_dir = get_output_dir(workspace_path)
+    dub_vocal_file = f"{output_dir}/dub.mp3"
+    
     with console.status("[bold cyan]💾 Exporting final audio file...[/bold cyan]"):
         merged_audio = merged_audio.set_frame_rate(16000).set_channels(1)
-        merged_audio.export(DUB_VOCAL_FILE, format="mp3", parameters=["-b:a", "64k"])
+        merged_audio.export(dub_vocal_file, format="mp3", parameters=["-b:a", "64k"])
     console.print(f"[bold green]✅ Audio file successfully merged![/bold green]")
-    console.print(f"[bold green]📁 Output file: {DUB_VOCAL_FILE}[/bold green]")
+    console.print(f"[bold green]📁 Output file: {dub_vocal_file}[/bold green]")
 
 if __name__ == "__main__":
     merge_full_audio()

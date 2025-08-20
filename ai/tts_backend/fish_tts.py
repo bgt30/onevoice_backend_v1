@@ -1,13 +1,14 @@
 import requests
-from ai.utils import *
 import json
+import os
+from ai.utils import load_key
 
 @except_handler("Failed to generate audio using 302.ai Fish TTS", retry=3, delay=1)
-def fish_tts(text: str, save_as: str) -> bool:
+def fish_tts(text: str, save_as: str, workspace_path: str = ".", config_path: str = None) -> bool:
     """302.ai Fish TTS conversion"""
-    API_KEY = load_key("fish_tts.api_key")
-    character = load_key("fish_tts.character")
-    refer_id = load_key("fish_tts.character_id_dict")[character]
+    API_KEY = load_key("fish_tts.api_key", config_path, workspace_path)
+    character = load_key("fish_tts.character", config_path, workspace_path)
+    refer_id = load_key("fish_tts.character_id_dict", config_path, workspace_path)[character]
     
     url = "https://api.302.ai/fish-audio/v1/tts"
     payload = json.dumps({
@@ -29,7 +30,9 @@ def fish_tts(text: str, save_as: str) -> bool:
         audio_response = requests.get(response_data["url"])
         audio_response.raise_for_status()
         
-        with open(save_as, "wb") as f:
+        # Save audio file with workspace_path
+        audio_path = f"{workspace_path}/output/audio/segs/{save_as}"
+        with open(audio_path, "wb") as f:
             f.write(audio_response.content)
         return True
     

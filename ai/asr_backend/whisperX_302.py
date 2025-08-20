@@ -7,18 +7,29 @@ import librosa
 import soundfile as sf
 from rich import print as rprint
 from ai.utils import *
-from ai.utils.path_constants import *
 
-OUTPUT_LOG_DIR = "output/log"
-def transcribe_audio_302(raw_audio_path: str, vocal_audio_path: str, start: float = None, end: float = None):
-    os.makedirs(OUTPUT_LOG_DIR, exist_ok=True)
-    LOG_FILE = f"{OUTPUT_LOG_DIR}/whisperx302_{start}_{end}.json"
-    if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "r", encoding="utf-8") as f:
+def transcribe_audio_302(raw_audio_path: str, vocal_audio_path: str, start: float = None, end: float = None, workspace_path: str = ".", config_path: str = None):
+    """
+    302.ai WhisperX API를 사용한 음성 인식
+    
+    Args:
+        raw_audio_path: Path to raw audio file
+        vocal_audio_path: Path to vocal audio file
+        start: Start time in seconds
+        end: End time in seconds
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    output_log_dir = f"{workspace_path}/output/log"
+    os.makedirs(output_log_dir, exist_ok=True)
+    log_file = f"{output_log_dir}/whisperx302_{start}_{end}.json"
+    
+    if os.path.exists(log_file):
+        with open(log_file, "r", encoding="utf-8") as f:
             return json.load(f)
         
-    WHISPER_LANGUAGE = load_key("whisper.language")
-    update_key("whisper.language", WHISPER_LANGUAGE)
+    whisper_language = load_key("whisper.language", config_path)
+    update_key("whisper.language", whisper_language, config_path)
     url = "https://api.302.ai/302/whisperx"
     
     y, sr = librosa.load(vocal_audio_path, sr=16000)
@@ -37,11 +48,11 @@ def transcribe_audio_302(raw_audio_path: str, vocal_audio_path: str, start: floa
     audio_buffer.seek(0)
     
     files = [('audio_input', ('audio_slice.wav', audio_buffer, 'application/octet-stream'))]
-    payload = {"processing_type": "align", "language": WHISPER_LANGUAGE, "output": "raw"}
+    payload = {"processing_type": "align", "language": whisper_language, "output": "raw"}
     
     start_time = time.time()
-    rprint(f"[cyan]🎤 Transcribing audio with language:  <{WHISPER_LANGUAGE}> ...[/cyan]")
-    headers = {'Authorization': f'Bearer {load_key("whisper.whisperX_302_api_key")}'}
+    rprint(f"[cyan]🎤 Transcribing audio with language:  <{whisper_language}> ...[/cyan]")
+    headers = {'Authorization': f'Bearer {load_key("whisper.whisperX_302_api_key", config_path)}'}
     response = requests.request("POST", url, headers=headers, data=payload, files=files)
     
     response_json = response.json()
@@ -56,7 +67,7 @@ def transcribe_audio_302(raw_audio_path: str, vocal_audio_path: str, start: floa
                 if 'end' in word:
                     word['end'] += start
     
-    with open(LOG_FILE, "w", encoding="utf-8") as f:
+    with open(log_file, "w", encoding="utf-8") as f:
         json.dump(response_json, f, indent=4, ensure_ascii=False)
     
     elapsed_time = time.time() - start_time
@@ -64,5 +75,5 @@ def transcribe_audio_302(raw_audio_path: str, vocal_audio_path: str, start: floa
     return response_json
 
 if __name__ == "__main__":  
-    result = transcribe_audio_302(_RAW_AUDIO_FILE, _RAW_AUDIO_FILE)
+    result = transcribe_audio_302("raw_audio.mp3", "raw_audio.mp3")
     rprint(result)

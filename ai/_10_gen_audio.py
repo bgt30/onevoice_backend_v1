@@ -11,14 +11,12 @@ from rich.progress import Progress
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ai.utils import *
-from ai.utils.path_constants import *
+from ai.utils.path_constants import get_8_1_audio_task, get_audio_tmp_dir, get_audio_segs_dir
 from ai.asr_backend.audio_preprocess import get_audio_duration
 from ai.tts_backend.tts_main import tts_main
 
 console = Console()
 
-TEMP_FILE_TEMPLATE = f"{_AUDIO_TMP_DIR}/{{}}_temp.wav"
-OUTPUT_FILE_TEMPLATE = f"{_AUDIO_SEGS_DIR}/{{}}.wav"
 WARMUP_SIZE = 5
 
 def parse_df_srt_time(time_str: str) -> float:
@@ -62,18 +60,22 @@ def adjust_audio_speed(input_file: str, output_file: str, speed_factor: float) -
                 rprint(f"[red]❌ Audio speed adjustment failed, max retries reached ({max_retries})[/red]")
                 raise e
 
-def process_row(row: pd.Series, tasks_df: pd.DataFrame) -> Tuple[int, float]:
+def process_row(row: pd.Series, tasks_df: pd.DataFrame, workspace_path: str = ".", config_path: str = None) -> Tuple[int, float]:
     """Helper function for processing single row data"""
     number = row['number']
     lines = eval(row['lines']) if isinstance(row['lines'], str) else row['lines']
     real_dur = 0
+    
+    audio_tmp_dir = get_audio_tmp_dir(workspace_path)
+    temp_file_template = f"{audio_tmp_dir}/{{}}_temp.wav"
+    
     for line_index, line in enumerate(lines):
-        temp_file = TEMP_FILE_TEMPLATE.format(f"{number}_{line_index}")
-        tts_main(line, temp_file, number, tasks_df)
+        temp_file = temp_file_template.format(f"{number}_{line_index}")
+        tts_main(line, temp_file, number, tasks_df, workspace_path, config_path)
         real_dur += get_audio_duration(temp_file)
     return number, real_dur
 
-def generate_tts_audio(tasks_df: pd.DataFrame) -> pd.DataFrame:
+def generate_tts_audio(tasks_df: pd.DataFrame, workspace_path: str = ".", config_path: str = None) -> pd.DataFrame:
     """Generate TTS audio sequentially and calculate actual duration"""
     tasks_df['real_dur'] = 0
     rprint("[bold green]🎯 Starting TTS audio generation...[/bold green]")
@@ -85,7 +87,7 @@ def generate_tts_audio(tasks_df: pd.DataFrame) -> pd.DataFrame:
         warmup_size = min(WARMUP_SIZE, len(tasks_df))
         for _, row in tasks_df.head(warmup_size).iterrows():
             try:
-                number, real_dur = process_row(row, tasks_df)
+                number, real_dur = process_row(row, tasks_df, workspace_path, config_path)
                 tasks_df.loc[tasks_df['number'] == number, 'real_dur'] = real_dur
                 progress.advance(task)
             except Exception as e:
@@ -93,13 +95,13 @@ def generate_tts_audio(tasks_df: pd.DataFrame) -> pd.DataFrame:
                 raise e
         
         # for gpt_sovits, do not use parallel to avoid mistakes
-        max_workers = load_key("max_workers") if load_key("tts_method") != "gpt_sovits" else 1
+        max_workers = load_key("max_workers", config_path) if load_key("tts_method", config_path) != "gpt_sovits" else 1
         # parallel processing for remaining tasks
         if len(tasks_df) > warmup_size:
             remaining_tasks = tasks_df.iloc[warmup_size:].copy()
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = [
-                    executor.submit(process_row, row, tasks_df.copy())
+                    executor.submit(process_row, row, tasks_df.copy(), workspace_path, config_path)
                     for _, row in remaining_tasks.iterrows()
                 ]
                 
@@ -138,12 +140,17 @@ def process_chunk(chunk_df: pd.DataFrame, accept: float, min_speed: float) -> tu
         
     return round(speed_factor, 3), keep_gaps
 
-def merge_chunks(tasks_df: pd.DataFrame) -> pd.DataFrame:
+def merge_chunks(tasks_df: pd.DataFrame, workspace_path: str = ".", config_path: str = None) -> pd.DataFrame:
     """Merge audio chunks and adjust timeline"""
     rprint("[bold blue]🔄 Starting audio chunks processing...[/bold blue]")
-    accept = load_key("speed_factor.accept")
-    min_speed = load_key("speed_factor.min")
+    accept = load_key("speed_factor.accept", config_path)
+    min_speed = load_key("speed_factor.min", config_path)
     chunk_start = 0
+    
+    audio_tmp_dir = get_audio_tmp_dir(workspace_path)
+    audio_segs_dir = get_audio_segs_dir(workspace_path)
+    temp_file_template = f"{audio_tmp_dir}/{{}}_temp.wav"
+    output_file_template = f"{audio_segs_dir}/{{}}.wav"
     
     tasks_df['new_sub_times'] = None
     
@@ -165,8 +172,8 @@ def merge_chunks(tasks_df: pd.DataFrame) -> pd.DataFrame:
                 lines = eval(row['lines']) if isinstance(row['lines'], str) else row['lines']
                 for line_index, line in enumerate(lines):
                     # 🔄 Step2: Start speed change and save as OUTPUT_FILE_TEMPLATE
-                    temp_file = TEMP_FILE_TEMPLATE.format(f"{number}_{line_index}")
-                    output_file = OUTPUT_FILE_TEMPLATE.format(f"{number}_{line_index}")
+                    temp_file = temp_file_template.format(f"{number}_{line_index}")
+                    output_file = output_file_template.format(f"{number}_{line_index}")
                     adjust_audio_speed(temp_file, output_file, speed_factor)
                     ad_dur = get_audio_duration(output_file)
                     new_sub_times.append([cur_time, cur_time+ad_dur])
@@ -186,7 +193,7 @@ def merge_chunks(tasks_df: pd.DataFrame) -> pd.DataFrame:
                     last_number = tasks_df.iloc[index]['number']
                     last_lines = eval(tasks_df.iloc[index]['lines']) if isinstance(tasks_df.iloc[index]['lines'], str) else tasks_df.iloc[index]['lines']
                     last_line_index = len(last_lines) - 1
-                    last_file = OUTPUT_FILE_TEMPLATE.format(f"{last_number}_{last_line_index}")
+                    last_file = output_file_template.format(f"{last_number}_{last_line_index}")
                     
                     # Calculate the duration to keep
                     audio = AudioSegment.from_wav(last_file)
@@ -206,26 +213,34 @@ def merge_chunks(tasks_df: pd.DataFrame) -> pd.DataFrame:
     rprint("[bold green]✅ Audio chunks processing completed![/bold green]")
     return tasks_df
 
-def gen_audio() -> None:
-    """Main function: Generate audio and process timeline"""
+def gen_audio(workspace_path: str = ".", config_path: str = None) -> None:
+    """
+    TTS 오디오 생성
+    
+    Args:
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
     rprint("[bold magenta]🚀 Starting audio generation process...[/bold magenta]")
     
     # 🎯 Step1: Create necessary directories
-    os.makedirs(_AUDIO_TMP_DIR, exist_ok=True)
-    os.makedirs(_AUDIO_SEGS_DIR, exist_ok=True)
+    audio_tmp_dir = get_audio_tmp_dir(workspace_path)
+    audio_segs_dir = get_audio_segs_dir(workspace_path)
+    os.makedirs(audio_tmp_dir, exist_ok=True)
+    os.makedirs(audio_segs_dir, exist_ok=True)
     
     # 📝 Step2: Load task file
-    tasks_df = pd.read_excel(_8_1_AUDIO_TASK)
+    tasks_df = pd.read_excel(get_8_1_audio_task(workspace_path))
     rprint("[green]📊 Loaded task file successfully[/green]")
     
     # 🔊 Step3: Generate TTS audio
-    tasks_df = generate_tts_audio(tasks_df)
+    tasks_df = generate_tts_audio(tasks_df, workspace_path, config_path)
     
     # 🔄 Step4: Merge audio chunks
-    tasks_df = merge_chunks(tasks_df)
+    tasks_df = merge_chunks(tasks_df, workspace_path, config_path)
     
     # 💾 Step5: Save results
-    tasks_df.to_excel(_8_1_AUDIO_TASK, index=False)
+    tasks_df.to_excel(get_8_1_audio_task(workspace_path), index=False)
     rprint("[bold green]🎉 Audio generation completed successfully![/bold green]")
 
 if __name__ == "__main__":

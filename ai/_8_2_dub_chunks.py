@@ -5,15 +5,13 @@ from ai._8_1_audio_task import time_diff_seconds
 from ai.asr_backend.audio_preprocess import get_audio_duration
 from ai.tts_backend.estimate_duration import init_estimator, estimate_duration
 from ai.utils import *
-from ai.utils.path_constants import *
+from ai.utils.path_constants import get_8_1_audio_task, get_output_dir, get_raw_audio_file
 
-SRC_SRT = "output/src.srt"
-TRANS_SRT = "output/trans.srt"
 MAX_MERGE_COUNT = 5
 ESTIMATOR = None
 
-def calc_if_too_fast(est_dur, tol_dur, duration, tolerance):
-    accept = load_key("speed_factor.accept") # Maximum acceptable speed factor
+def calc_if_too_fast(est_dur, tol_dur, duration, tolerance, config_path: str = None):
+    accept = load_key("speed_factor.accept", config_path) # Maximum acceptable speed factor
     if est_dur / accept > tol_dur:  # Even max speed factor cannot adapt
         return 2
     elif est_dur > tol_dur:  # Speed adjustment needed within acceptable range
@@ -23,7 +21,7 @@ def calc_if_too_fast(est_dur, tol_dur, duration, tolerance):
     else:  # Normal speaking speed
         return 0
 
-def merge_rows(df, start_idx, merge_count):
+def merge_rows(df, start_idx, merge_count, config_path: str = None):
     """Merge multiple rows and calculate cumulative values"""
     merged = {
         'est_dur': df.iloc[start_idx]['est_dur'],
@@ -41,7 +39,8 @@ def merge_rows(df, start_idx, merge_count):
             merged['est_dur'],
             merged['tol_dur'],
             merged['duration'],
-            df.iloc[start_idx + merge_count]['tolerance']
+            df.iloc[start_idx + merge_count]['tolerance'],
+            config_path
         )
         
         if speed_flag <= 0 or merge_count == 2:
@@ -55,13 +54,13 @@ def merge_rows(df, start_idx, merge_count):
         df.at[start_idx + merge_count - 1, 'cut_off'] = 1
     return merge_count
 
-def analyze_subtitle_timing_and_speed(df):
+def analyze_subtitle_timing_and_speed(df, workspace_path: str = ".", config_path: str = None):
     rprint("[🔍 Analyzing] Calculating subtitle timing and speed...")
     global ESTIMATOR
     if ESTIMATOR is None:
         ESTIMATOR = init_estimator()
-    TOLERANCE = load_key("tolerance")
-    whole_dur = get_audio_duration(_RAW_AUDIO_FILE)
+    TOLERANCE = load_key("tolerance", config_path)
+    whole_dur = get_audio_duration(get_raw_audio_file(workspace_path))
     df['gap'] = 0.0  # Initialize gap column
     for i in range(len(df) - 1):
         current_end = datetime.datetime.strptime(df.loc[i, 'end_time'], '%H:%M:%S.%f').time()
@@ -79,7 +78,7 @@ def analyze_subtitle_timing_and_speed(df):
     df['est_dur'] = df.apply(lambda x: estimate_duration(x['text'], ESTIMATOR), axis=1)
 
     ## Calculate speed indicators
-    accept = load_key("speed_factor.accept") # Maximum acceptable speed factor
+    accept = load_key("speed_factor.accept", config_path) # Maximum acceptable speed factor
     def calc_if_too_fast(row):
         est_dur = row['est_dur']
         tol_dur = row['tol_dur']
@@ -98,10 +97,10 @@ def analyze_subtitle_timing_and_speed(df):
     df['if_too_fast'] = df.apply(calc_if_too_fast, axis=1)
     return df
 
-def process_cutoffs(df):
+def process_cutoffs(df, config_path: str = None):
     rprint("[✂️ Processing] Generating cutoff points...")
     df['cut_off'] = 0  # Initialize cut_off column
-    df.loc[df['gap'] >= load_key("tolerance"), 'cut_off'] = 1  # Set to 1 when gap is greater than TOLERANCE
+    df.loc[df['gap'] >= load_key("tolerance", config_path), 'cut_off'] = 1  # Set to 1 when gap is greater than TOLERANCE
     idx = 0
     while idx < len(df):
         # Process marked split points
@@ -122,26 +121,37 @@ def process_cutoffs(df):
                 df.at[idx, 'cut_off'] = 1
                 idx += 1
             else:
-                idx += merge_rows(df, idx, 1)
+                idx += merge_rows(df, idx, 1, config_path)
         # Process fast lines
         else:
-            idx += merge_rows(df, idx, 1)
+            idx += merge_rows(df, idx, 1, config_path)
     
     return df
 
-def gen_dub_chunks():
+def gen_dub_chunks(workspace_path: str = ".", config_path: str = None):
+    """
+    더빙 청크 생성
+    
+    Args:
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
     rprint("[🎬 Starting] Generating dubbing chunks...")
-    df = pd.read_excel(_8_1_AUDIO_TASK)
+    df = pd.read_excel(get_8_1_audio_task(workspace_path))
     
     rprint("[📊 Processing] Analyzing timing and speed...")
-    df = analyze_subtitle_timing_and_speed(df)
+    df = analyze_subtitle_timing_and_speed(df, workspace_path, config_path)
     
     rprint("[✂️ Processing] Processing cutoffs...")
-    df = process_cutoffs(df)
+    df = process_cutoffs(df, config_path)
 
     rprint("[📝 Reading] Loading transcript files...")
-    content = open(TRANS_SRT, "r", encoding="utf-8").read()
-    ori_content = open(SRC_SRT, "r", encoding="utf-8").read()
+    output_dir = get_output_dir(workspace_path)
+    trans_srt = f"{output_dir}/trans.srt"
+    src_srt = f"{output_dir}/src.srt"
+    
+    content = open(trans_srt, "r", encoding="utf-8").read()
+    ori_content = open(src_srt, "r", encoding="utf-8").read()
     
     # Process subtitle content
     content_lines = []
@@ -199,7 +209,7 @@ def gen_dub_chunks():
             raise ValueError("Matching failed")
 
     # Save results
-    df.to_excel(_8_1_AUDIO_TASK, index=False)
+    df.to_excel(get_8_1_audio_task(workspace_path), index=False)
     rprint("[✅ Complete] Matching completed successfully!")
 
 if __name__ == "__main__":

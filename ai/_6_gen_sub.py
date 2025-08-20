@@ -4,7 +4,8 @@ import re
 from rich.panel import Panel
 from rich.console import Console
 from ai.utils import *
-from ai.utils.path_constants import *
+from ai.utils.path_constants import get_2_cleaned_chunks, get_5_split_sub, get_5_remerged, get_output_dir, get_audio_dir
+
 console = Console()
 
 SUBTITLE_OUTPUT_CONFIGS = [ 
@@ -139,22 +140,28 @@ def align_timestamp(df_text, df_translate, subtitle_output_configs: list, output
     
     return df_trans_time
 
-
-
-def align_timestamp_main():
-    df_text = pd.read_excel(_2_CLEANED_CHUNKS)
-    df_text['text'] = df_text['text'].str.strip('"').str.strip()
-    df_translate = pd.read_excel(_5_SPLIT_SUB)
+def align_timestamp_main(workspace_path: str = ".", config_path: str = None):
+    """
+    자막 생성 및 타임스탬프 정렬
     
-    align_timestamp(df_text, df_translate, SUBTITLE_OUTPUT_CONFIGS, _OUTPUT_DIR)
+    Args:
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    df_text = pd.read_excel(get_2_cleaned_chunks(workspace_path))
+    df_text['text'] = df_text['text'].str.strip('"').str.strip()
+    df_translate = pd.read_excel(get_5_split_sub(workspace_path))
+    
+    output_dir = get_output_dir(workspace_path)
+    align_timestamp(df_text, df_translate, SUBTITLE_OUTPUT_CONFIGS, output_dir)
     console.print(Panel("[bold green]🎉📝 Subtitles generation completed! Please check in the `output` folder 👀[/bold green]"))
 
     # for audio
-    df_translate_for_audio = pd.read_excel(_5_REMERGED) # use remerged file to avoid unmatched lines when dubbing
+    df_translate_for_audio = pd.read_excel(get_5_remerged(workspace_path)) # use remerged file to avoid unmatched lines when dubbing
     
-    align_timestamp(df_text, df_translate_for_audio, AUDIO_SUBTITLE_OUTPUT_CONFIGS, _AUDIO_DIR)
-    console.print(Panel(f"[bold green]🎉📝 Audio subtitles generation completed! Please check in the `{_AUDIO_DIR}` folder 👀[/bold green]"))
-    
+    audio_dir = get_audio_dir(workspace_path)
+    align_timestamp(df_text, df_translate_for_audio, AUDIO_SUBTITLE_OUTPUT_CONFIGS, audio_dir)
+    console.print(Panel(f"[bold green]🎉📝 Audio subtitles generation completed! Please check in the `{audio_dir}` folder 👀[/bold green]"))
 
 if __name__ == '__main__':
     align_timestamp_main()

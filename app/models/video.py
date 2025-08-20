@@ -20,14 +20,7 @@ class Video(BaseModel):
     # 기본 정보
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
-    
-    # 비디오 메타데이터
-    duration: Mapped[Optional[float]] = mapped_column(Float)  # 초 단위
-    file_size: Mapped[Optional[int]] = mapped_column(Integer)  # 바이트 단위
-    format: Mapped[Optional[str]] = mapped_column(String(10))  # mp4, avi, etc.
-    resolution: Mapped[Optional[str]] = mapped_column(String(20))  # 1920x1080, etc.
-    fps: Mapped[Optional[float]] = mapped_column(Float)  # frames per second
-    
+        
     # 언어 정보
     original_language: Mapped[Optional[str]] = mapped_column(String(10))  # ISO 639-1 코드
     target_languages: Mapped[Optional[str]] = mapped_column(Text)  # JSON 배열 형태
@@ -37,16 +30,7 @@ class Video(BaseModel):
         String(20), 
         nullable=False, 
         default="uploaded"
-    )  # uploaded, processing, completed, failed
-    
-    # 파일 경로
-    original_file_path: Mapped[Optional[str]] = mapped_column(String(500))
-    processed_file_path: Mapped[Optional[str]] = mapped_column(String(500))
-    thumbnail_url: Mapped[Optional[str]] = mapped_column(String(500))
-    
-    # S3 정보
-    s3_bucket: Mapped[Optional[str]] = mapped_column(String(100))
-    s3_key: Mapped[Optional[str]] = mapped_column(String(500))
+    )  # uploaded, processing, completed, failed, pending, cancelled
     
     # 공유 설정
     is_public: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -58,9 +42,6 @@ class Video(BaseModel):
     processing_started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     processing_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     processing_error: Mapped[Optional[str]] = mapped_column(Text)
-    
-    # 추가 메타데이터 (JSON 형태)
-    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSON)
     
     # 관계
     user: Mapped["User"] = relationship("User", back_populates="videos")
@@ -98,12 +79,15 @@ class MediaFile(BaseModel):
     # 파일 정보
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     file_type: Mapped[str] = mapped_column(
-        String(20), 
+        String(32), 
         nullable=False
-    )  # original, dubbed, subtitle, thumbnail, etc.
+    )  # original, dubbed_video, subtitle_video, dub_subtitles, translation_subtitles, source_subtitles, thumbnail, etc.
     
     file_format: Mapped[str] = mapped_column(String(10), nullable=False)  # mp4, srt, jpg, etc.
     file_size: Mapped[Optional[int]] = mapped_column(Integer)  # 바이트 단위
+    duration: Mapped[Optional[float]] = mapped_column(Float)  # 초 단위
+    resolution: Mapped[Optional[str]] = mapped_column(String(20))  # 1920x1080, etc.
+    fps: Mapped[Optional[float]] = mapped_column(Float)  # frames per second
     
     # 저장 경로
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)

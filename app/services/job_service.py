@@ -55,7 +55,14 @@ class JobService:
         user_id: Optional[str] = None
     ) -> Optional[Job]:
         """작업 조회"""
-        query = select(Job).options(selectinload(Job.job_steps)).where(Job.id == job_id)
+        query = (
+            select(Job)
+            .options(
+                selectinload(Job.job_steps),
+                selectinload(Job.video),
+            )
+            .where(Job.id == job_id)
+        )
         
         if user_id:
             query = query.where(Job.user_id == user_id)
@@ -291,34 +298,6 @@ class JobService:
             return False
 
     @staticmethod
-    async def retry_job(
-        db: AsyncSession,
-        job_id: str
-    ) -> bool:
-        """작업 재시도"""
-        result = await db.execute(select(Job).where(Job.id == job_id))
-        job = result.scalar_one_or_none()
-        
-        if not job or job.status != "failed" or job.retry_count >= job.max_retries:
-            return False
-
-        # 상태 초기화
-        job.status = "pending"
-        job.progress = 0.0
-        job.started_at = None
-        job.completed_at = None
-        job.error_message = None
-        job.error_code = None
-        job.updated_at = datetime.now(timezone.utc)
-        
-        try:
-            await db.commit()
-            return True
-        except Exception:
-            await db.rollback()
-            return False
-
-    @staticmethod
     async def create_job_steps(
         db: AsyncSession,
         job_id: str,
@@ -400,20 +379,26 @@ class JobService:
         db: AsyncSession,
         job_id: str
     ) -> None:
-        """작업 단계들의 진행률을 기반으로 전체 Job 진행률 업데이트"""
-        # 모든 단계의 평균 진행률 계산
-        result = await db.execute(
-            select(func.avg(JobStep.progress))
-            .where(JobStep.job_id == job_id)
+        """작업 단계들의 가중 진행률을 기반으로 전체 Job 진행률 업데이트"""
+        # 가중치 합과 가중 진행률 합 계산
+        weighted_sum_result = await db.execute(
+            select(func.sum(JobStep.progress * JobStep.weight)).where(JobStep.job_id == job_id)
         )
-        avg_progress = result.scalar() or 0.0
-        
+        total_weight_result = await db.execute(
+            select(func.sum(JobStep.weight)).where(JobStep.job_id == job_id)
+        )
+
+        weighted_sum = weighted_sum_result.scalar() or 0.0
+        total_weight = total_weight_result.scalar() or 0.0
+
+        weighted_progress = (weighted_sum / total_weight) if total_weight and total_weight > 0 else 0.0
+
         # Job 진행률 업데이트
         job_result = await db.execute(select(Job).where(Job.id == job_id))
         job = job_result.scalar_one_or_none()
-        
+
         if job:
-            job.progress = avg_progress
+            job.progress = weighted_progress
             job.updated_at = datetime.now(timezone.utc)
             await db.commit()
 

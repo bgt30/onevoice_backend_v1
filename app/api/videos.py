@@ -5,7 +5,6 @@
 # - PUT /api/videos/{id}
 # - DELETE /api/videos/{id}
 # - POST /api/videos
-# - POST /api/videos/upload
 # - POST /api/videos/upload-url
 # - GET /api/videos/{id}/download
 # - POST /api/videos/{id}/dub
@@ -39,7 +38,8 @@ from app.schemas import (
     DubRequest,
     Language,
     Video,
-    Voice
+    Voice,
+    FileType,
 )
 
 router = APIRouter(prefix="/api/videos", tags=["Video Management"])
@@ -133,23 +133,7 @@ async def delete_video(
     return await VideoService.delete_video(db, current_user, id)
 
 
-@router.post(
-    "/upload",
-    responses={
-        201: {"model": Video, "description": "Video uploaded successfully"},
-    },
-    summary="Upload video file",
-    response_model_by_alias=True,
-)
-async def upload_video(
-    file: UploadFile = File(..., description="Video file to upload"),
-    title: StrictStr = Form(..., description="Video title"),
-    description: Optional[StrictStr] = Form(None, description="Video description"),
-    current_user: UserModel = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db)
-) -> Video:
-    """Upload video file directly"""
-    return await VideoService.upload_video(db, current_user, file, title, description)
+
 
 
 @router.post(
@@ -174,17 +158,26 @@ async def get_upload_url(
     responses={
         200: {"model": DownloadResponse, "description": "Download URL generated"},
     },
-    summary="Download processed video",
+    summary="Download processed video or dubbed outputs",
     response_model_by_alias=True,
 )
 async def download_video(
     id: StrictStr = Path(..., description=""),
-    language: Optional[StrictStr] = Query(None, description=""),
+    language: Optional[StrictStr] = Query(None, description="Target language code for dubbed outputs (e.g., 'en', 'ja')"),
+    file_type: Optional[FileType] = Query(
+        None,
+        description=(
+            "File type to download: 'dubbed_video' | 'subtitle_video' | 'dub_subtitles' | "
+            "'translation_subtitles' | 'source_subtitles' | 'original'. Defaults to 'dubbed_video'."
+        ),
+    ),
     current_user: UserModel = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ) -> DownloadResponse:
-    """Get download URL for processed video"""
-    return await VideoService.get_download_url(db, current_user, id, language)
+    """Return a presigned URL for the requested output."""
+    # Convert Enum to raw value for service layer
+    file_type_value = file_type.value if file_type is not None else None
+    return await VideoService.get_download_url(db, current_user, id, language, file_type_value)
 
 
 @router.post(
@@ -203,8 +196,8 @@ async def start_dubbing(
     db: AsyncSession = Depends(get_db)
 ) -> DubResponse:
     """Start video dubbing process"""
-    # 1. VideoService로 Job 생성
-    dub_response = await VideoService.start_dubbing(db, current_user, id, dub_request)
+    # 1. DubbingService로 Job 생성/과금/상태 전이
+    dub_response = await DubbingService.start_dubbing_job(db, current_user, id, dub_request)
     
     # 2. DubbingService를 BackgroundTasks로 실행
     background_tasks.add_task(

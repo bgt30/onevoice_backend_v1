@@ -1,5 +1,6 @@
 # API Schemas - Pydantic 모델 (요청/응답)
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictFloat, StrictInt, StrictStr, field_validator
 from typing_extensions import Annotated
@@ -236,6 +237,15 @@ class UsageResponse(BaseModel):
     overage_cost: Optional[Union[StrictFloat, StrictInt]] = None
 
 # ===== 비디오 관련 스키마 =====
+class FileType(str, Enum):
+    """다운로드/저장 시 사용하는 표준 파일 타입 키"""
+    original = "original"
+    dubbed_video = "dubbed_video"
+    subtitle_video = "subtitle_video"
+    dub_subtitles = "dub_subtitles"
+    translation_subtitles = "translation_subtitles"
+    source_subtitles = "source_subtitles"
+
 class Video(BaseModel):
     """비디오 정보"""
     model_config = ConfigDict(from_attributes=True)

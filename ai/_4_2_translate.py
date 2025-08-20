@@ -1,6 +1,7 @@
 import pandas as pd
 import json
 import concurrent.futures
+import os
 from ai.translate_lines import translate_lines
 from ai._4_1_summarize import search_things_to_note_in_prompt
 from ai._8_1_audio_task import check_len_then_trim
@@ -9,13 +10,15 @@ from ai.utils import *
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from difflib import SequenceMatcher
-from ai.utils.path_constants import *
+from ai.utils.path_constants import get_3_2_split_by_meaning, get_4_1_terminology, get_4_2_translation, get_2_cleaned_chunks
+
 console = Console()
 
 # Function to split text into chunks
-def split_chunks_by_chars(chunk_size, max_i): 
+def split_chunks_by_chars(chunk_size, max_i, workspace_path: str = "."): 
     """Split text into chunks based on character count, return a list of multi-line text chunks"""
-    with open(_3_2_SPLIT_BY_MEANING, "r", encoding="utf-8") as file:
+    input_file = get_3_2_split_by_meaning(workspace_path)
+    with open(input_file, "r", encoding="utf-8") as file:
         sentences = file.read().strip().split('\n')
 
     chunks = []
@@ -39,11 +42,11 @@ def get_after_content(chunks, chunk_index):
     return None if chunk_index == len(chunks) - 1 else chunks[chunk_index + 1].split('\n')[:2] # Get first 2 lines
 
 # 🔍 Translate a single chunk
-def translate_chunk(chunk, chunks, theme_prompt, i):
-    things_to_note_prompt = search_things_to_note_in_prompt(chunk)
+def translate_chunk(chunk, chunks, theme_prompt, i, workspace_path: str = "."):
+    things_to_note_prompt = search_things_to_note_in_prompt(chunk, workspace_path)
     previous_content_prompt = get_previous_content(chunks, i)
     after_content_prompt = get_after_content(chunks, i)
-    translation, english_result = translate_lines(chunk, previous_content_prompt, after_content_prompt, things_to_note_prompt, theme_prompt, i)
+    translation, english_result = translate_lines(chunk, previous_content_prompt, after_content_prompt, things_to_note_prompt, theme_prompt, i, workspace_path, config_path)
     return i, english_result, translation
 
 # Add similarity calculation function
@@ -51,20 +54,35 @@ def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 # 🚀 Main function to translate all chunks
-@check_file_exists(_4_2_TRANSLATION)
-def translate_all():
+def translate_all(workspace_path: str = ".", config_path: str = None):
+    """
+    텍스트 번역
+    
+    Args:
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    output_file = get_4_2_translation(workspace_path)
+    
+    # Check if output file already exists
+    if os.path.exists(output_file):
+        print(f"Output file already exists: {output_file}")
+        return
+    
     console.print("[bold green]Start Translating All...[/bold green]")
-    chunks = split_chunks_by_chars(chunk_size=600, max_i=10)
-    with open(_4_1_TERMINOLOGY, 'r', encoding='utf-8') as file:
+    chunks = split_chunks_by_chars(chunk_size=600, max_i=10, workspace_path=workspace_path)
+    
+    terminology_file = get_4_1_terminology(workspace_path)
+    with open(terminology_file, 'r', encoding='utf-8') as file:
         theme_prompt = json.load(file).get('theme')
 
     # 🔄 Use concurrent execution for translation
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as progress:
         task = progress.add_task("[cyan]Translating chunks...", total=len(chunks))
-        with concurrent.futures.ThreadPoolExecutor(max_workers=load_key("max_workers")) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=load_key("max_workers", config_path)) as executor:
             futures = []
             for i, chunk in enumerate(chunks):
-                future = executor.submit(translate_chunk, chunk, chunks, theme_prompt, i)
+                future = executor.submit(translate_chunk, chunk, chunks, theme_prompt, i, workspace_path)
                 futures.append(future)
             results = []
             for future in concurrent.futures.as_completed(futures):
@@ -95,17 +113,17 @@ def translate_all():
         trans_text.extend(best_match[0][2].split('\n'))
     
     # Trim long translation text
-    df_text = pd.read_excel(_2_CLEANED_CHUNKS)
+    df_text = pd.read_excel(get_2_cleaned_chunks(workspace_path))
     df_text['text'] = df_text['text'].str.strip('"').str.strip()
     df_translate = pd.DataFrame({'Source': src_text, 'Translation': trans_text})
     subtitle_output_configs = [('trans_subs_for_audio.srt', ['Translation'])]
     df_time = align_timestamp(df_text, df_translate, subtitle_output_configs, output_dir=None, for_display=False)
     console.print(df_time)
     # apply check_len_then_trim to df_time['Translation'], only when duration > MIN_TRIM_DURATION.
-    df_time['Translation'] = df_time.apply(lambda x: check_len_then_trim(x['Translation'], x['duration']) if x['duration'] > load_key("min_trim_duration") else x['Translation'], axis=1)
+    df_time['Translation'] = df_time.apply(lambda x: check_len_then_trim(x['Translation'], x['duration']) if x['duration'] > load_key("min_trim_duration", config_path) else x['Translation'], axis=1)
     console.print(df_time)
     
-    df_time.to_excel(_4_2_TRANSLATION, index=False)
+    df_time.to_excel(output_file, index=False)
     console.print("[bold green]✅ Translation completed and results saved.[/bold green]")
 
 if __name__ == '__main__':

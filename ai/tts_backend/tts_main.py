@@ -3,13 +3,8 @@ import re
 from pydub import AudioSegment
 
 from ai.asr_backend.audio_preprocess import get_audio_duration
-from ai.tts_backend.gpt_sovits_tts import gpt_sovits_tts_for_onevoice
-from ai.tts_backend.sf_fishtts import siliconflow_fish_tts_for_onevoice
 from ai.tts_backend.openai_tts import openai_tts
 from ai.tts_backend.fish_tts import fish_tts
-from ai.tts_backend.azure_tts import azure_tts
-from ai.tts_backend.edge_tts import edge_tts
-from ai.tts_backend.sf_cosyvoice2 import cosyvoice_tts_for_onevoice
 from ai.tts_backend.custom_tts import custom_tts
 from ai.prompts import get_correct_text_prompt
 from ai.tts_backend._302_f5tts import f5_tts_for_onevoice
@@ -22,7 +17,18 @@ def clean_text_for_tts(text):
         text = text.replace(char, '')
     return text.strip()
 
-def tts_main(text, save_as, number, task_df):
+def tts_main(text, save_as, number, task_df, workspace_path: str = ".", config_path: str = None):
+    """
+    TTS 메인 함수
+    
+    Args:
+        text: Text to convert to speech
+        save_as: Output file path
+        number: Task number
+        task_df: Task dataframe
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
     text = clean_text_for_tts(text)
     # Check if text is empty or single character, single character voiceovers are prone to bugs
     cleaned_text = re.sub(r'[^\w\s]', '', text).strip()
@@ -37,33 +43,23 @@ def tts_main(text, save_as, number, task_df):
         return
     
     print(f"Generating <{text}...>")
-    TTS_METHOD = load_key("tts_method")
+    tts_method = load_key("tts_method", config_path)
     
     max_retries = 3
     for attempt in range(max_retries):
         try:
             if attempt >= max_retries - 1:
                 print("Asking GPT to correct text...")
-                correct_text = ask_gpt(get_correct_text_prompt(text),resp_type="json", log_title='tts_correct_text')
+                correct_text = ask_gpt(get_correct_text_prompt(text), resp_type="json", log_title='tts_correct_text')
                 text = correct_text['text']
-            if TTS_METHOD == 'openai_tts':
-                openai_tts(text, save_as)
-            elif TTS_METHOD == 'gpt_sovits':
-                gpt_sovits_tts_for_onevoice(text, save_as, number, task_df)
-            elif TTS_METHOD == 'fish_tts':
-                fish_tts(text, save_as)
-            elif TTS_METHOD == 'azure_tts':
-                azure_tts(text, save_as)
-            elif TTS_METHOD == 'sf_fish_tts':
-                siliconflow_fish_tts_for_onevoice(text, save_as, number, task_df)
-            elif TTS_METHOD == 'edge_tts':
-                edge_tts(text, save_as)
-            elif TTS_METHOD == 'custom_tts':
-                custom_tts(text, save_as)
-            elif TTS_METHOD == 'sf_cosyvoice2':
-                cosyvoice_tts_for_onevoice(text, save_as, number, task_df)
-            elif TTS_METHOD == 'f5tts':
-                f5_tts_for_onevoice(text, save_as, number, task_df)
+            if tts_method == 'openai_tts':
+                openai_tts(text, save_as, workspace_path, config_path)
+            elif tts_method == 'fish_tts':
+                fish_tts(text, save_as, workspace_path, config_path)
+            elif tts_method == 'custom_tts':
+                custom_tts(text, save_as, workspace_path, config_path)
+            elif tts_method == 'f5tts':
+                f5_tts_for_onevoice(text, save_as, number, task_df, workspace_path, config_path)
                 
             # Check generated audio duration
             duration = get_audio_duration(save_as)

@@ -64,11 +64,23 @@ def elev2whisper(elev_json, word_level_timestamp = False):
                 }
     return {"segments": segments}
 
-def transcribe_audio_elevenlabs(raw_audio_path, vocal_audio_path, start = None, end = None):
+def transcribe_audio_elevenlabs(raw_audio_path, vocal_audio_path, start = None, end = None, workspace_path: str = ".", config_path: str = None):
+    """
+    ElevenLabs API를 사용한 음성 인식
+    
+    Args:
+        raw_audio_path: Path to raw audio file
+        vocal_audio_path: Path to vocal audio file
+        start: Start time in seconds
+        end: End time in seconds
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
     rprint(f"[cyan]🎤 Processing audio transcription, file path: {vocal_audio_path}[/cyan]")
-    LOG_FILE = f"output/log/elevenlabs_transcribe_{start}_{end}.json"
-    if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, "r", encoding="utf-8") as f:
+    log_file = f"{workspace_path}/output/log/elevenlabs_transcribe_{start}_{end}.json"
+    
+    if os.path.exists(log_file):
+        with open(log_file, "r", encoding="utf-8") as f:
             return json.load(f)
     
     # Load audio and process start/end parameters
@@ -90,14 +102,14 @@ def transcribe_audio_elevenlabs(raw_audio_path, vocal_audio_path, start = None, 
         sf.write(temp_filepath, y_slice, sr, format='MP3')
     
     try:
-        api_key = load_key("whisper.elevenlabs_api_key")
+        api_key = load_key("whisper.elevenlabs_api_key", config_path)
         base_url = "https://api.elevenlabs.io/v1/speech-to-text"
         headers = {"xi-api-key": api_key}
         
         data = {
             "model_id": "scribe_v1",
             "timestamps_granularity": "word",
-            "language_code": load_key("whisper.language"),
+            "language_code": load_key("whisper.language", config_path),
             "diarize": True,
             "num_speakers": None,
             "tag_audio_events": False
@@ -113,7 +125,7 @@ def transcribe_audio_elevenlabs(raw_audio_path, vocal_audio_path, start = None, 
 
         # save detected language
         detected_language = iso_639_2_to_1.get(result["language_code"], result["language_code"])
-        update_key("whisper.detected_language", detected_language)
+        update_key("whisper.detected_language", detected_language, config_path)
 
         # Adjust timestamps for all words by adding the start time
         if start is not None and 'words' in result:
@@ -125,8 +137,8 @@ def transcribe_audio_elevenlabs(raw_audio_path, vocal_audio_path, start = None, 
         
         rprint(f"[green]✓ Transcription completed in {time.time() - start_time:.2f} seconds[/green]")
         parsed_result = elev2whisper(result)
-        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
-        with open(LOG_FILE, "w", encoding="utf-8") as f:
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        with open(log_file, "w", encoding="utf-8") as f:
             json.dump(parsed_result, f, indent=4, ensure_ascii=False)
         return parsed_result
     finally:
@@ -137,7 +149,7 @@ def transcribe_audio_elevenlabs(raw_audio_path, vocal_audio_path, start = None, 
 if __name__ == "__main__":
     file_path = input("Enter local audio file path (mp3 format): ")
     language = input("Enter language code for transcription (en or zh or other...): ")
-    result = transcribe_audio_elevenlabs(file_path, language_code=language)
+    result = transcribe_audio_elevenlabs(file_path, file_path)
     print(result)
     
     # Save result to file

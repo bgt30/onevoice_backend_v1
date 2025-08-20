@@ -7,11 +7,10 @@ from ai.asr_backend.audio_preprocess import normalize_audio_volume
 from ai.utils import *
 from ai.utils.path_constants import *
 
-API_KEY = load_key("f5tts.302_api")
 UPLOADED_REFER_URL = None
 
-def upload_file_to_302(file_path):
-    API_KEY = load_key("f5tts.302_api")
+def upload_file_to_302(file_path, config_path: str = None, workspace_path: str = "."):
+    API_KEY = load_key("f5tts.302_api", config_path, workspace_path)
     url = "https://api.302.ai/302/upload-file"
     
     files = [('file', (os.path.basename(file_path), open(file_path, 'rb'), 'application/octet-stream'))]
@@ -26,7 +25,8 @@ def upload_file_to_302(file_path):
         return None
     return None
 
-def _f5_tts(text: str, refer_url: str, save_path: str) -> bool:
+def _f5_tts(text: str, refer_url: str, save_path: str, config_path: str = None, workspace_path: str = ".") -> bool:
+    API_KEY = load_key("f5tts.302_api", config_path, workspace_path)
     conn = http.client.HTTPSConnection("api.302.ai")
     payload = json.dumps({"gen_text": text, "ref_audio_url": refer_url, "model_type": "F5-TTS"})
     headers = {'Authorization': f'Bearer {API_KEY}', 'Content-Type': 'application/json'}
@@ -75,7 +75,7 @@ def _merge_audio(files, output: str) -> bool:
         rprint(f"[red]Failed to merge audio: {str(e)}")
         return False
     
-def _get_ref_audio(task_df, min_duration=8, max_duration=14.5) -> str:
+def _get_ref_audio(task_df, workspace_path: str = ".", min_duration=8, max_duration=14.5) -> str:
     """Get reference audio, ensuring the combined audio duration is > min_duration and < max_duration"""
     rprint(f"[blue]🎯 Starting reference audio selection process...")
     
@@ -103,10 +103,10 @@ def _get_ref_audio(task_df, min_duration=8, max_duration=14.5) -> str:
         
     rprint(f"[blue]📊 Selected {len(selected)} segments, total duration: {duration:.2f}s")
     
-    audio_files = [f"{_AUDIO_REFERS_DIR}/{row['number']}.wav" for row in selected]
+    audio_files = [f"{get_audio_refers_dir(workspace_path)}/{row['number']}.wav" for row in selected]
     rprint(f"[yellow]🎵 Audio files to merge: {audio_files}")
     
-    combined_audio = f"{_AUDIO_REFERS_DIR}/refer.wav"
+    combined_audio = f"{get_audio_refers_dir(workspace_path)}/refer.wav"
     success = _merge_audio(audio_files, combined_audio)
     
     if not success:
@@ -117,18 +117,18 @@ def _get_ref_audio(task_df, min_duration=8, max_duration=14.5) -> str:
     
     return combined_audio
 
-def f5_tts_for_onevoice(text: str, save_as: str, number: int, task_df):
+def f5_tts_for_onevoice(text: str, save_as: str, number: int, task_df, workspace_path: str = ".", config_path: str = None):
     global UPLOADED_REFER_URL
     
     # Only process the reference audio if we haven't uploaded it yet
     if UPLOADED_REFER_URL is None:
-        refer_path = _get_ref_audio(task_df)
-        normalized_refer_path = normalize_audio_volume(refer_path, f"{_AUDIO_REFERS_DIR}/refer_normalized.wav")
-        UPLOADED_REFER_URL = upload_file_to_302(normalized_refer_path)
+        refer_path = _get_ref_audio(task_df, workspace_path)
+        normalized_refer_path = normalize_audio_volume(refer_path, f"{get_audio_refers_dir(workspace_path)}/refer_normalized.wav")
+        UPLOADED_REFER_URL = upload_file_to_302(normalized_refer_path, config_path, workspace_path)
         rprint(f"[green]✅ Reference audio uploaded, URL cached for reuse")
     
     try:
-        success = _f5_tts(text=text, refer_url=UPLOADED_REFER_URL, save_path=save_as)
+        success = _f5_tts(text=text, refer_url=UPLOADED_REFER_URL, save_path=save_as, config_path=config_path, workspace_path=workspace_path)
         return success
     except Exception as e:
         print(f"Error in f5_tts_for_onevoice: {str(e)}")

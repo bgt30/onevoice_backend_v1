@@ -6,20 +6,22 @@ from ai.spacy_utils.load_nlp_model import init_nlp
 from ai.utils import *
 from rich.console import Console
 from rich.table import Table
-from ai.utils.path_constants import _3_1_SPLIT_BY_NLP, _3_2_SPLIT_BY_MEANING
+from ai.utils.path_constants import get_3_1_split_by_nlp, get_3_2_split_by_meaning
+import os
+
 console = Console()
 
 def tokenize_sentence(sentence, nlp):
     doc = nlp(sentence)
     return [token.text for token in doc]
 
-def find_split_positions(original, modified):
+def find_split_positions(original, modified, config_path: str = None):
     split_positions = []
     parts = modified.split('[br]')
     start = 0
-    whisper_language = load_key("whisper.language")
-    language = load_key("whisper.detected_language") if whisper_language == 'auto' else whisper_language
-    joiner = get_joiner(language)
+    whisper_language = load_key("whisper.language", config_path)
+    language = load_key("whisper.detected_language", config_path) if whisper_language == 'auto' else whisper_language
+    joiner = get_joiner(language, config_path)
 
     for i in range(len(parts) - 1):
         max_similarity = 0
@@ -45,9 +47,9 @@ def find_split_positions(original, modified):
 
     return split_positions
 
-def split_sentence(sentence, num_parts, word_limit=20, index=-1, retry_attempt=0):
+def split_sentence(sentence, num_parts, word_limit=20, index=-1, retry_attempt=0, config_path: str = None):
     """Split a long sentence using GPT and return the result as a string."""
-    split_prompt = get_split_prompt(sentence, num_parts, word_limit)
+    split_prompt = get_split_prompt(sentence, num_parts, word_limit, config_path)
     def valid_split(response_data):
         choice = response_data["choice"]
         if f'split{choice}' not in response_data:
@@ -56,10 +58,10 @@ def split_sentence(sentence, num_parts, word_limit=20, index=-1, retry_attempt=0
             return {"status": "error", "message": "Split failed, no [br] found"}
         return {"status": "success", "message": "Split completed"}
     
-    response_data = ask_gpt(split_prompt + " " * retry_attempt, resp_type='json', valid_def=valid_split, log_title='split_by_meaning')
+    response_data = ask_gpt(split_prompt + " " * retry_attempt, resp_type='json', valid_def=valid_split, workspace_path=workspace_path, config_path=config_path, log_title='split_by_meaning')
     choice = response_data["choice"]
     best_split = response_data[f"split{choice}"]
-    split_points = find_split_positions(sentence, best_split)
+    split_points = find_split_positions(sentence, best_split, config_path)
     # split the sentence based on the split points
     for i, split_point in enumerate(split_points):
         if i == 0:
@@ -80,7 +82,7 @@ def split_sentence(sentence, num_parts, word_limit=20, index=-1, retry_attempt=0
     
     return best_split
 
-def parallel_split_sentences(sentences, max_length, max_workers, nlp, retry_attempt=0):
+def parallel_split_sentences(sentences, max_length, max_workers, nlp, retry_attempt=0, config_path: str = None):
     """Split sentences in parallel using a thread pool."""
     new_sentences = [None] * len(sentences)
     futures = []
@@ -92,7 +94,7 @@ def parallel_split_sentences(sentences, max_length, max_workers, nlp, retry_atte
             # print("Tokenization result:", tokens)
             num_parts = math.ceil(len(tokens) / max_length)
             if len(tokens) > max_length:
-                future = executor.submit(split_sentence, sentence, num_parts, max_length, index=index, retry_attempt=retry_attempt)
+                future = executor.submit(split_sentence, sentence, num_parts, max_length, index=index, retry_attempt=retry_attempt, config_path=config_path)
                 futures.append((future, index, num_parts, sentence))
             else:
                 new_sentences[index] = [sentence]
@@ -107,20 +109,40 @@ def parallel_split_sentences(sentences, max_length, max_workers, nlp, retry_atte
 
     return [sentence for sublist in new_sentences for sentence in sublist]
 
-@check_file_exists(_3_2_SPLIT_BY_MEANING)
-def split_sentences_by_meaning():
-    """The main function to split sentences by meaning."""
+def split_sentences_by_meaning(workspace_path: str = ".", config_path: str = None):
+    """
+    의미 기반 텍스트 분할
+    
+    Args:
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    output_file = get_3_2_split_by_meaning(workspace_path)
+    
+    # Check if output file already exists
+    if os.path.exists(output_file):
+        print(f"Output file already exists: {output_file}")
+        return
+    
     # read input sentences
-    with open(_3_1_SPLIT_BY_NLP, 'r', encoding='utf-8') as f:
+    input_file = get_3_1_split_by_nlp(workspace_path)
+    with open(input_file, 'r', encoding='utf-8') as f:
         sentences = [line.strip() for line in f.readlines()]
 
-    nlp = init_nlp()
+    nlp = init_nlp(config_path)
     # 🔄 process sentences multiple times to ensure all are split
     for retry_attempt in range(3):
-        sentences = parallel_split_sentences(sentences, max_length=load_key("max_split_length"), max_workers=load_key("max_workers"), nlp=nlp, retry_attempt=retry_attempt)
+        sentences = parallel_split_sentences(
+            sentences, 
+            max_length=load_key("max_split_length", config_path), 
+            max_workers=load_key("max_workers", config_path), 
+            nlp=nlp, 
+            retry_attempt=retry_attempt,
+            config_path=config_path
+        )
 
     # 💾 save results
-    with open(_3_2_SPLIT_BY_MEANING, 'w', encoding='utf-8') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         f.write('\n'.join(sentences))
     console.print('[green]✅ All sentences have been successfully split![/green]')
 

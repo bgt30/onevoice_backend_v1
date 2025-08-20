@@ -2,7 +2,7 @@ import itertools
 import os
 import warnings
 from ai.utils import *
-from ai.spacy_utils.load_nlp_model import init_nlp, SPLIT_BY_COMMA_FILE, SPLIT_BY_MARK_FILE
+from ai.spacy_utils.load_nlp_model import init_nlp
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -44,9 +44,19 @@ def split_by_comma(text, nlp):
     sentences.append(doc[start:].text.strip())
     return sentences
 
-def split_by_comma_main(nlp):
+def split_by_comma_main(nlp, workspace_path: str = ".", config_path: str = None):
+    """
+    쉼표 기반 텍스트 분할
+    
+    Args:
+        nlp: Spacy NLP model
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    split_by_mark_file = f"{workspace_path}/output/log/split_by_mark.txt"
+    split_by_comma_file = f"{workspace_path}/output/log/split_by_comma.txt"
 
-    with open(SPLIT_BY_MARK_FILE, "r", encoding="utf-8") as input_file:
+    with open(split_by_mark_file, "r", encoding="utf-8") as input_file:
         sentences = input_file.readlines()
 
     all_split_sentences = []
@@ -54,14 +64,14 @@ def split_by_comma_main(nlp):
         split_sentences = split_by_comma(sentence.strip(), nlp)
         all_split_sentences.extend(split_sentences)
 
-    with open(SPLIT_BY_COMMA_FILE, "w", encoding="utf-8") as output_file:
+    with open(split_by_comma_file, "w", encoding="utf-8") as output_file:
         for sentence in all_split_sentences:
             output_file.write(sentence + "\n")
     
     # delete the original file
-    os.remove(SPLIT_BY_MARK_FILE)
+    os.remove(split_by_mark_file)
     
-    rprint(f"[green]💾 Sentences split by commas saved to →  `{SPLIT_BY_COMMA_FILE}`[/green]")
+    rprint(f"[green]💾 Sentences split by commas saved to →  `{split_by_comma_file}`[/green]")
 
 if __name__ == "__main__":
     nlp = init_nlp()

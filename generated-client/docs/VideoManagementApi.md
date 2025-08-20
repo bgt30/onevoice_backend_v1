@@ -18,7 +18,7 @@ All URIs are relative to *https://api.onevoice.com*
 |[**apiVideosLanguagesGet**](#apivideoslanguagesget) | **GET** /api/videos/languages | Get supported languages|
 |[**apiVideosPost**](#apivideospost) | **POST** /api/videos | Create new video|
 
-|[**apiVideosUploadPost**](#apivideosuploadpost) | **POST** /api/videos/upload | Upload video file|
+
 |[**apiVideosUploadUrlPost**](#apivideosuploadurlpost) | **POST** /api/videos/upload-url | Get pre-signed upload URL|
 |[**apiVideosVoicesGet**](#apivideosvoicesget) | **GET** /api/videos/voices | Get available voices for language|
 
@@ -643,61 +643,6 @@ const { status, data } = await apiInstance.apiVideosPost(
 
 
 
-# **apiVideosUploadPost**
-> Video apiVideosUploadPost()
-
-
-### Example
-
-```typescript
-import {
-    VideoManagementApi,
-    Configuration
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new VideoManagementApi(configuration);
-
-let file: File; // (optional) (default to undefined)
-let title: string; // (optional) (default to undefined)
-let description: string; // (optional) (default to undefined)
-
-const { status, data } = await apiInstance.apiVideosUploadPost(
-    file,
-    title,
-    description
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **file** | [**File**] |  | (optional) defaults to undefined|
-| **title** | [**string**] |  | (optional) defaults to undefined|
-| **description** | [**string**] |  | (optional) defaults to undefined|
-
-
-### Return type
-
-**Video**
-
-### Authorization
-
-[bearerAuth](../README.md#bearerAuth)
-
-### HTTP request headers
-
- - **Content-Type**: multipart/form-data
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**201** | Video uploaded successfully |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **apiVideosUploadUrlPost**
 > ApiVideosUploadUrlPost200Response apiVideosUploadUrlPost(apiVideosUploadUrlPostRequest)

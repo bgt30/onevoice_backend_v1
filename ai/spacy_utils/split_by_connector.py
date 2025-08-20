@@ -1,6 +1,6 @@
 import os
 import warnings
-from ai.spacy_utils.load_nlp_model import init_nlp, SPLIT_BY_COMMA_FILE, SPLIT_BY_CONNECTOR_FILE
+from ai.spacy_utils.load_nlp_model import init_nlp
 from ai.utils import rprint
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -124,9 +124,20 @@ def split_by_connectors(text, context_words=5, nlp=None):
     
     return sentences
 
-def split_sentences_main(nlp):
+def split_sentences_main(nlp, workspace_path: str = ".", config_path: str = None):
+    """
+    연결어 기반 텍스트 분할
+    
+    Args:
+        nlp: Spacy NLP model
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    split_by_comma_file = f"{workspace_path}/output/log/split_by_comma.txt"
+    split_by_connector_file = f"{workspace_path}/output/log/split_by_connector.txt"
+    
     # Read input sentences
-    with open(SPLIT_BY_COMMA_FILE, "r", encoding="utf-8") as input_file:
+    with open(split_by_comma_file, "r", encoding="utf-8") as input_file:
         sentences = input_file.readlines()
     
     all_split_sentences = []
@@ -135,7 +146,7 @@ def split_sentences_main(nlp):
         split_sentences = split_by_connectors(sentence.strip(), nlp = nlp)
         all_split_sentences.extend(split_sentences)
     
-    with open(SPLIT_BY_CONNECTOR_FILE, "w+", encoding="utf-8") as output_file:
+    with open(split_by_connector_file, "w+", encoding="utf-8") as output_file:
         for sentence in all_split_sentences:
             output_file.write(sentence + "\n")
         # do not add a newline at the end of the file
@@ -143,9 +154,9 @@ def split_sentences_main(nlp):
         output_file.truncate()
 
     # delete the original file
-    os.remove(SPLIT_BY_COMMA_FILE)
+    os.remove(split_by_comma_file)
     
-    rprint(f"[green]💾 Sentences split by connectors saved to →  `{SPLIT_BY_CONNECTOR_FILE}`[/green]")
+    rprint(f"[green]💾 Sentences split by connectors saved to →  `{split_by_connector_file}`[/green]")
 
 if __name__ == "__main__":
     nlp = init_nlp()

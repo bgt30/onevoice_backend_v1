@@ -3,7 +3,7 @@ import pandas as pd
 from typing import Dict, List, Tuple
 from pydub import AudioSegment
 from ai.utils import *
-from ai.utils.path_constants import *
+from ai.utils.path_constants import get_audio_dir, get_raw_audio_file, get_2_cleaned_chunks
 from pydub import AudioSegment
 from pydub.silence import detect_silence
 from pydub.utils import mediainfo
@@ -17,18 +17,21 @@ def normalize_audio_volume(audio_path, output_path, target_db = -20.0, format = 
     rprint(f"[green]✅ Audio normalized from {audio.dBFS:.1f}dB to {target_db:.1f}dB[/green]")
     return output_path
 
-def convert_video_to_audio(video_file: str):
-    os.makedirs(_AUDIO_DIR, exist_ok=True)
-    if not os.path.exists(_RAW_AUDIO_FILE):
+def convert_video_to_audio(video_file: str, workspace_path: str = ".", config_path: str = None):
+    audio_dir = get_audio_dir(workspace_path)
+    raw_audio_file = get_raw_audio_file(workspace_path)
+    
+    os.makedirs(audio_dir, exist_ok=True)
+    if not os.path.exists(raw_audio_file):
         rprint(f"[blue]🎬➡️🎵 Converting to high quality audio with FFmpeg ......[/blue]")
         subprocess.run([
             'ffmpeg', '-y', '-i', video_file, '-vn',
             '-c:a', 'libmp3lame', '-b:a', '32k',
             '-ar', '16000',
             '-ac', '1', 
-            '-metadata', 'encoding=UTF-8', _RAW_AUDIO_FILE
+            '-metadata', 'encoding=UTF-8', raw_audio_file
         ], check=True, stderr=subprocess.PIPE)
-        rprint(f"[green]🎬➡️🎵 Converted <{video_file}> to <{_RAW_AUDIO_FILE}> with FFmpeg\n[/green]")
+        rprint(f"[green]🎬➡️🎵 Converted <{video_file}> to <{raw_audio_file}> with FFmpeg\n[/green]")
 
 def get_audio_duration(audio_file: str) -> float:
     """Get the duration of an audio file using ffmpeg."""
@@ -135,8 +138,9 @@ def process_transcription(result: Dict) -> pd.DataFrame:
     
     return pd.DataFrame(all_words)
 
-def save_results(df: pd.DataFrame):
-    os.makedirs('output/log', exist_ok=True)
+def save_results(df: pd.DataFrame, workspace_path: str = ".", config_path: str = None):
+    output_dir = f"{workspace_path}/output/log"
+    os.makedirs(output_dir, exist_ok=True)
 
     # Remove rows where 'text' is empty
     initial_rows = len(df)
@@ -152,8 +156,9 @@ def save_results(df: pd.DataFrame):
         df = df[df['text'].str.len() <= 30]
     
     df['text'] = df['text'].apply(lambda x: f'"{x}"')
-    df.to_excel(_2_CLEANED_CHUNKS, index=False)
-    rprint(f"[green]📊 Excel file saved to {_2_CLEANED_CHUNKS}[/green]")
+    output_file = get_2_cleaned_chunks(workspace_path)
+    df.to_excel(output_file, index=False)
+    rprint(f"[green]📊 Excel file saved to {output_file}[/green]")
 
-def save_language(language: str):
-    update_key("whisper.detected_language", language)
+def save_language(language: str, config_path: str = None):
+    update_key("whisper.detected_language", language, config_path)

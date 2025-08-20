@@ -2,48 +2,77 @@
 # Defining intermediate output files
 # ------------------------------------------
 
-_2_CLEANED_CHUNKS = "output/log/cleaned_chunks.xlsx"
-_3_1_SPLIT_BY_NLP = "output/log/split_by_nlp.txt"
-_3_2_SPLIT_BY_MEANING = "output/log/split_by_meaning.txt"
-_4_1_TERMINOLOGY = "output/log/terminology.json"
-_4_2_TRANSLATION = "output/log/translation_results.xlsx"
-_5_SPLIT_SUB = "output/log/translation_results_for_subtitles.xlsx"
-_5_REMERGED = "output/log/translation_results_remerged.xlsx"
+def get_2_cleaned_chunks(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/log/cleaned_chunks.xlsx"
 
-_8_1_AUDIO_TASK = "output/audio/tts_tasks.xlsx"
+def get_3_1_split_by_nlp(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/log/split_by_nlp.txt"
 
+def get_3_2_split_by_meaning(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/log/split_by_meaning.txt"
+
+def get_4_1_terminology(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/log/terminology.json"
+
+def get_4_2_translation(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/log/translation_results.xlsx"
+
+def get_5_split_sub(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/log/translation_results_for_subtitles.xlsx"
+
+def get_5_remerged(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/log/translation_results_remerged.xlsx"
+
+def get_8_1_audio_task(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/audio/tts_tasks.xlsx"
 
 # ------------------------------------------
 # Define audio file
 # ------------------------------------------
-_OUTPUT_DIR = "output"
-_AUDIO_DIR = "output/audio"
-_RAW_AUDIO_FILE = "output/audio/raw.mp3"
-_VOCAL_AUDIO_FILE = "output/audio/vocal.mp3"
-_BACKGROUND_AUDIO_FILE = "output/audio/background.mp3"
-_AUDIO_REFERS_DIR = "output/audio/refers"
-_AUDIO_SEGS_DIR = "output/audio/segs"
-_AUDIO_TMP_DIR = "output/audio/tmp"
+def get_output_dir(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output"
+
+def get_audio_dir(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/audio"
+
+def get_raw_audio_file(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/audio/raw.mp3"
+
+def get_vocal_audio_file(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/audio/vocal.mp3"
+
+def get_background_audio_file(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/audio/background.mp3"
+
+def get_audio_refers_dir(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/audio/refers"
+
+def get_audio_segs_dir(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/audio/segs"
+
+def get_audio_tmp_dir(workspace_path: str = ".") -> str:
+    return f"{workspace_path}/output/audio/tmp"
 
 # ------------------------------------------
 # Export
 # ------------------------------------------
 
 __all__ = [
-    "_2_CLEANED_CHUNKS",
-    "_3_1_SPLIT_BY_NLP",
-    "_3_2_SPLIT_BY_MEANING",
-    "_4_1_TERMINOLOGY",
-    "_4_2_TRANSLATION",
-    "_5_SPLIT_SUB",
-    "_5_REMERGED",
-    "_8_1_AUDIO_TASK",
-    "_OUTPUT_DIR",
-    "_AUDIO_DIR",
-    "_RAW_AUDIO_FILE",
-    "_VOCAL_AUDIO_FILE",
-    "_BACKGROUND_AUDIO_FILE",
-    "_AUDIO_REFERS_DIR",
-    "_AUDIO_SEGS_DIR",
-    "_AUDIO_TMP_DIR"
+    # New functions
+    "get_2_cleaned_chunks",
+    "get_3_1_split_by_nlp", 
+    "get_3_2_split_by_meaning",
+    "get_4_1_terminology",
+    "get_4_2_translation",
+    "get_5_split_sub",
+    "get_5_remerged",
+    "get_8_1_audio_task",
+    "get_output_dir",
+    "get_audio_dir",
+    "get_raw_audio_file",
+    "get_vocal_audio_file",
+    "get_background_audio_file",
+    "get_audio_refers_dir",
+    "get_audio_segs_dir",
+    "get_audio_tmp_dir",
 ]

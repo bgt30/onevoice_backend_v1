@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import List, Tuple
 import concurrent.futures
+import os
 
 from ai._3_2_split_meaning import split_sentence
 from ai.prompts import get_align_prompt
@@ -8,7 +9,8 @@ from rich.panel import Panel
 from rich.console import Console
 from rich.table import Table
 from ai.utils import *
-from ai.utils.path_constants import *
+from ai.utils.path_constants import get_4_2_translation, get_5_split_sub, get_5_remerged
+
 console = Console()
 
 # ! You can modify your own weights here
@@ -30,8 +32,8 @@ def calc_len(text: str) -> float:
 
     return sum(char_weight(char) for char in text)
 
-def align_subs(src_sub: str, tr_sub: str, src_part: str) -> Tuple[List[str], List[str], str]:
-    align_prompt = get_align_prompt(src_sub, tr_sub, src_part)
+def align_subs(src_sub: str, tr_sub: str, src_part: str, workspace_path: str = ".", config_path: str = None) -> Tuple[List[str], List[str], str]:
+    align_prompt = get_align_prompt(src_sub, tr_sub, src_part, config_path)
     
     def valid_align(response_data):
         if 'align' not in response_data:
@@ -39,14 +41,14 @@ def align_subs(src_sub: str, tr_sub: str, src_part: str) -> Tuple[List[str], Lis
         if len(response_data['align']) < 2:
             return {"status": "error", "message": "Align does not contain more than 1 part as expected!"}
         return {"status": "success", "message": "Align completed"}
-    parsed = ask_gpt(align_prompt, resp_type='json', valid_def=valid_align, log_title='align_subs')
+    parsed = ask_gpt(align_prompt, resp_type='json', valid_def=valid_align, workspace_path=workspace_path, config_path=config_path, log_title='align_subs')
     align_data = parsed['align']
     src_parts = src_part.split('\n')
     tr_parts = [item[f'target_part_{i+1}'].strip() for i, item in enumerate(align_data)]
     
-    whisper_language = load_key("whisper.language")
-    language = load_key("whisper.detected_language") if whisper_language == 'auto' else whisper_language
-    joiner = get_joiner(language)
+    whisper_language = load_key("whisper.language", config_path)
+    language = load_key("whisper.detected_language", config_path) if whisper_language == 'auto' else whisper_language
+    joiner = get_joiner(language, config_path)
     tr_remerged = joiner.join(tr_parts)
     
     table = Table(title="🔗 Aligned parts")
@@ -58,8 +60,8 @@ def align_subs(src_sub: str, tr_sub: str, src_part: str) -> Tuple[List[str], Lis
     
     return src_parts, tr_parts, tr_remerged
 
-def split_align_subs(src_lines: List[str], tr_lines: List[str]):
-    subtitle_set = load_key("subtitle")
+def split_align_subs(src_lines: List[str], tr_lines: List[str], config_path: str = None):
+    subtitle_set = load_key("subtitle", config_path)
     MAX_SUB_LENGTH = subtitle_set["max_length"]
     TARGET_SUB_MULTIPLIER = subtitle_set["target_multiplier"]
     remerged_tr_lines = tr_lines.copy()
@@ -78,13 +80,13 @@ def split_align_subs(src_lines: List[str], tr_lines: List[str]):
     
     @except_handler("Error in split_align_subs")
     def process(i):
-        split_src = split_sentence(src_lines[i], num_parts=2).strip()
-        src_parts, tr_parts, tr_remerged = align_subs(src_lines[i], tr_lines[i], split_src)
+        split_src = split_sentence(src_lines[i], num_parts=2, config_path=config_path).strip()
+        src_parts, tr_parts, tr_remerged = align_subs(src_lines[i], tr_lines[i], split_src, workspace_path, config_path)
         src_lines[i] = src_parts
         tr_lines[i] = tr_parts
         remerged_tr_lines[i] = tr_remerged
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=load_key("max_workers")) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=load_key("max_workers", config_path)) as executor:
         executor.map(process, to_split)
     
     # Flatten `src_lines` and `tr_lines`
@@ -93,20 +95,35 @@ def split_align_subs(src_lines: List[str], tr_lines: List[str]):
     
     return src_lines, tr_lines, remerged_tr_lines
 
-def split_for_sub_main():
+def split_for_sub_main(workspace_path: str = ".", config_path: str = None):
+    """
+    자막용 텍스트 분할
+    
+    Args:
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    output_file = get_5_split_sub(workspace_path)
+    remerged_file = get_5_remerged(workspace_path)
+    
+    # Check if output file already exists
+    if os.path.exists(output_file):
+        print(f"Output file already exists: {output_file}")
+        return
+    
     console.print("[bold green]🚀 Start splitting subtitles...[/bold green]")
     
-    df = pd.read_excel(_4_2_TRANSLATION)
+    df = pd.read_excel(get_4_2_translation(workspace_path))
     src = df['Source'].tolist()
     trans = df['Translation'].tolist()
     
-    subtitle_set = load_key("subtitle")
+    subtitle_set = load_key("subtitle", config_path)
     MAX_SUB_LENGTH = subtitle_set["max_length"]
     TARGET_SUB_MULTIPLIER = subtitle_set["target_multiplier"]
     
     for attempt in range(3):  # Multiple cutting
         console.print(Panel(f"🔄 Split attempt {attempt + 1}", expand=False))
-        split_src, split_trans, remerged = split_align_subs(src.copy(), trans)
+        split_src, split_trans, remerged = split_align_subs(src.copy(), trans, config_path)
         
         # Check if all subtitles meet the length requirements
         if all(len(src) <= MAX_SUB_LENGTH for src in split_src) and \
@@ -122,8 +139,8 @@ def split_for_sub_main():
     elif len(remerged) > len(src):
         src += [None] * (len(remerged) - len(src))
     
-    pd.DataFrame({'Source': split_src, 'Translation': split_trans}).to_excel(_5_SPLIT_SUB, index=False)
-    pd.DataFrame({'Source': src, 'Translation': remerged}).to_excel(_5_REMERGED, index=False)
+    pd.DataFrame({'Source': split_src, 'Translation': split_trans}).to_excel(output_file, index=False)
+    pd.DataFrame({'Source': src, 'Translation': remerged}).to_excel(remerged_file, index=False)
 
 if __name__ == '__main__':
     split_for_sub_main()

@@ -1,39 +1,54 @@
-from pathlib import Path
 import requests
 import json
-from ai.utils import load_key, except_handler
+import os
+from ai.utils import load_key
 
-BASE_URL = "https://api.302.ai/v1/audio/speech"
-VOICE_LIST = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
-# voice options: alloy, echo, fable, onyx, nova, and shimmer
-# refer to: https://platform.openai.com/docs/guides/text-to-speech/quickstart
-@except_handler("Failed to generate audio using OpenAI TTS", retry=3, delay=1)
-def openai_tts(text, save_path):
-    API_KEY = load_key("openai_tts.api_key")
-    voice = load_key("openai_tts.voice")
-    payload = json.dumps({
-        "model": "tts-1",
-        "input": text,
-        "voice": voice,
-        "response_format": "wav"
-    })
+def openai_tts(text, save_as, workspace_path: str = ".", config_path: str = None):
+    """
+    Generate TTS audio using OpenAI TTS API
     
-    if voice not in VOICE_LIST:
-        raise ValueError(f"Invalid voice: {voice}. Please choose from {VOICE_LIST}")
-    headers = {'Authorization': f"Bearer {API_KEY}", 'Content-Type': 'application/json'}
-    
-    speech_file_path = Path(save_path)
-    speech_file_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    response = requests.post(BASE_URL, headers=headers, data=payload)
-    
-    if response.status_code == 200:
-        with open(speech_file_path, 'wb') as f:
-            f.write(response.content)
-        print(f"Audio saved to {speech_file_path}")
-    else:
-        print(f"Error: {response.status_code}")
-        print(response.text)
+    Args:
+        text: Text to synthesize
+        save_as: Output filename
+        workspace_path: Path to workspace directory
+        config_path: Path to config file
+    """
+    try:
+        API_KEY = load_key("openai_tts.api_key", config_path, workspace_path)
+        voice = load_key("openai_tts.voice", config_path, workspace_path)
+        
+        url = "https://api.openai.com/v1/audio/speech"
+        
+        headers = {
+            "Authorization": f"Bearer {API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        data = {
+            "model": "tts-1",
+            "input": text,
+            "voice": voice,
+            "response_format": "mp3",
+            "speed": 1.0
+        }
+        
+        response = requests.post(url, headers=headers, json=data)
+        
+        if response.status_code == 200:
+            # Save audio file
+            audio_path = f"{workspace_path}/output/audio/segs/{save_as}"
+            with open(audio_path, 'wb') as f:
+                f.write(response.content)
+            return True
+        else:
+            print(f"OpenAI TTS API error: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"OpenAI TTS error: {str(e)}")
+        return False
 
 if __name__ == "__main__":
-    openai_tts("Hi! Welcome to onevoice!", "test.wav")
+    # Test function
+    result = openai_tts("Hello world", "test.wav")
+    print(f"OpenAI TTS test result: {result}")

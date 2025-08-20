@@ -1,18 +1,29 @@
 import os
 import pandas as pd
 import warnings
-from ai.spacy_utils.load_nlp_model import init_nlp, SPLIT_BY_MARK_FILE
+from ai.spacy_utils.load_nlp_model import init_nlp
 from ai.utils.config_utils import load_key, get_joiner
+from ai.utils.path_constants import get_2_cleaned_chunks
 from rich import print as rprint
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-def split_by_mark(nlp):
-    whisper_language = load_key("whisper.language")
-    language = load_key("whisper.detected_language") if whisper_language == 'auto' else whisper_language # consider force english case
-    joiner = get_joiner(language)
+def split_by_mark(nlp, workspace_path: str = ".", config_path: str = None):
+    """
+    구두점 기반 텍스트 분할
+    
+    Args:
+        nlp: Spacy NLP model
+        workspace_path: Path to workspace directory
+        config_path: Path to config file (optional)
+    """
+    whisper_language = load_key("whisper.language", config_path)
+    language = load_key("whisper.detected_language", config_path) if whisper_language == 'auto' else whisper_language # consider force english case
+    joiner = get_joiner(language, config_path)
     rprint(f"[blue]🔍 Using {language} language joiner: '{joiner}'[/blue]")
-    chunks = pd.read_excel("output/log/cleaned_chunks.xlsx")
+    
+    cleaned_chunks_file = get_2_cleaned_chunks(workspace_path)
+    chunks = pd.read_excel(cleaned_chunks_file)
     chunks.text = chunks.text.apply(lambda x: x.strip('"').strip(""))
     
     # join with joiner
@@ -47,7 +58,8 @@ def split_by_mark(nlp):
     if current_sentence:
         sentences_by_mark.append(' '.join(current_sentence))
 
-    with open(SPLIT_BY_MARK_FILE, "w", encoding="utf-8") as output_file:
+    split_by_mark_file = f"{workspace_path}/output/log/split_by_mark.txt"
+    with open(split_by_mark_file, "w", encoding="utf-8") as output_file:
         for i, sentence in enumerate(sentences_by_mark):
             if i > 0 and sentence.strip() in [',', '.', '，', '。', '？', '！']:
                 # ! If the current line contains only punctuation, merge it with the previous line, this happens in Chinese, Japanese, etc.
@@ -56,7 +68,7 @@ def split_by_mark(nlp):
             else:
                 output_file.write(sentence + "\n")
     
-    rprint(f"[green]💾 Sentences split by punctuation marks saved to →  `{SPLIT_BY_MARK_FILE}`[/green]")
+    rprint(f"[green]💾 Sentences split by punctuation marks saved to →  `{split_by_mark_file}`[/green]")
 
 if __name__ == "__main__":
     nlp = init_nlp()
