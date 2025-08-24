@@ -9,27 +9,31 @@ from typing import Any, Dict
 
 import structlog
 from structlog.stdlib import LoggerFactory
+from app.config import get_settings
 
 
 def setup_logging() -> None:
     """간소화된 로깅 설정"""
+    settings = get_settings()
     
     # 로그 디렉토리 생성
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
     
     # 기본 로깅 설정 (간소화)
+    handlers = [
+        logging.StreamHandler(sys.stdout),
+        logging.handlers.RotatingFileHandler(
+            'logs/onevoice.log',
+            maxBytes=10485760,  # 10MB
+            backupCount=5
+        )
+    ]
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.handlers.RotatingFileHandler(
-                'logs/onevoice.log',
-                maxBytes=10485760,  # 10MB
-                backupCount=5
-            )
-        ]
+        handlers=handlers
     )
     
     # 특정 로거들의 레벨 조정

@@ -55,6 +55,14 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: Optional[str] = Field(default=None, description="AWS Secret Access Key")
     AWS_REGION: str = Field(default="us-west-2", description="AWS 리전")
     S3_BUCKET_NAME: str = Field(default="onevoice-videos", description="S3 버킷 이름")
+    AWS_USE_IAM_ROLE: bool = Field(default=True, description="인스턴스/역할 자격증명 사용 여부 (기본 True)")
+
+    # Task Queue (SQS)
+    USE_SQS_TASK_QUEUE: bool = Field(default=False, description="SQS 기반 작업 큐 사용 (로컬 기본 False)")
+    SQS_QUEUE_URL: Optional[str] = Field(default=None, description="기본 SQS 큐 URL")
+    SQS_DLQ_URL: Optional[str] = Field(default=None, description="Dead Letter Queue URL")
+    SQS_WAIT_TIME_SECONDS: int = Field(default=20, description="SQS 롱폴링 대기 시간(초)")
+    SQS_VISIBILITY_TIMEOUT: int = Field(default=900, description="SQS 메시지 가시성 타임아웃(초)")
     
     # Stripe 설정  
     STRIPE_SECRET_KEY: Optional[str] = Field(default=None, description="Stripe Secret Key")
@@ -66,13 +74,11 @@ class Settings(BaseSettings):
     ELEVENLABS_API_KEY: Optional[str] = Field(default=None, description="ElevenLabs API 키")
     ANTHROPIC_API_KEY: Optional[str] = Field(default=None, description="Anthropic API 키")
     
-    # 이메일 설정
-    SMTP_HOST: Optional[str] = Field(default="smtp.gmail.com", description="SMTP 호스트")
-    SMTP_PORT: int = Field(default=587, description="SMTP 포트")
-    SMTP_USERNAME: Optional[str] = Field(default=None, description="SMTP 사용자명")
-    SMTP_PASSWORD: Optional[str] = Field(default=None, description="SMTP 비밀번호")
+    # 이메일/알림 설정 (SES/SNS)
+    SES_ENABLED: bool = Field(default=True, description="Amazon SES 사용 여부")
     EMAILS_FROM_EMAIL: Optional[str] = Field(default="noreply@onevoice.ai", description="발신 이메일 주소")
     EMAILS_FROM_NAME: str = Field(default="OneVoice", description="발신자 이름")
+    SNS_ALERTS_TOPIC_ARN: Optional[str] = Field(default=None, description="운영 알림용 SNS 토픽 ARN")
     
     # 파일 업로드 설정
     MAX_FILE_SIZE: int = Field(default=500 * 1024 * 1024, description="최대 업로드 파일 크기 (바이트)")  # 500MB
@@ -89,8 +95,8 @@ class Settings(BaseSettings):
     )
     
     # 모니터링 설정
-    SENTRY_DSN: Optional[str] = Field(default=None, description="Sentry DSN")
-    ENABLE_METRICS: bool = Field(default=True, description="메트릭 수집 활성화")
+    # SENTRY_DSN: Optional[str] = Field(default=None, description="Sentry DSN")
+    # ENABLE_METRICS: bool = Field(default=True, description="메트릭 수집 활성화")
     
     # 크레딧 시스템 설정
     DEFAULT_FREE_CREDITS: int = Field(default=100, description="신규 사용자 기본 무료 크레딧")

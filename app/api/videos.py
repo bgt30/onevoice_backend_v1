@@ -25,6 +25,8 @@ from app.dependecies import get_db, get_current_active_user, check_credits
 from app.models.user import User as UserModel
 from app.services.video_service import VideoService
 from app.services.dubbing_service import DubbingService
+from app.config import get_settings
+from app.queue.dispatcher import enqueue_dubbing_job
 from app.schemas import (
     ForgotPasswordResponse,
     VideosResponse,
@@ -43,6 +45,7 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/api/videos", tags=["Video Management"])
+settings = get_settings()
 
 
 @router.get(
@@ -199,11 +202,14 @@ async def start_dubbing(
     # 1. DubbingService로 Job 생성/과금/상태 전이
     dub_response = await DubbingService.start_dubbing_job(db, current_user, id, dub_request)
     
-    # 2. DubbingService를 BackgroundTasks로 실행
-    background_tasks.add_task(
-        DubbingService.execute_dubbing_pipeline,
-        dub_response.job_id
-    )
+    # 2. 실행 경로 선택: SQS 또는 로컬 BackgroundTasks
+    if settings.USE_SQS_TASK_QUEUE:
+        await enqueue_dubbing_job(dub_response.job_id, current_user.id, id)
+    else:
+        background_tasks.add_task(
+            DubbingService.execute_dubbing_pipeline,
+            dub_response.job_id
+        )
     
     return dub_response
 

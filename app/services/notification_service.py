@@ -1,10 +1,9 @@
 # 이메일 알림 서비스 - 회원가입 인증, 비밀번호 초기화, 영상 처리 알림
 import asyncio
-import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
 from typing import Optional, Dict, Any
 from jinja2 import Environment, BaseLoader
+import boto3
+from botocore.exceptions import ClientError
 
 from app.models.user import User
 from app.config import get_settings
@@ -332,43 +331,122 @@ class NotificationService:
         subject: str,
         html_content: str
     ) -> bool:
-        """이메일 발송 (SMTP)"""
-        try:
-            # SMTP 설정이 없으면 스킵
-            if not all([
-                settings.SMTP_HOST,
-                settings.SMTP_USERNAME,
-                settings.SMTP_PASSWORD
-            ]):
-                print("SMTP 설정이 없어 이메일 발송을 건너뜁니다.")
-                return True  # 개발환경에서는 성공으로 처리
-            
-            # 이메일 메시지 생성
-            msg = MimeMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{settings.EMAILS_FROM_NAME} <{settings.EMAILS_FROM_EMAIL}>"
-            msg['To'] = to_email
-            
-            # HTML 파트 추가
-            html_part = MimeText(html_content, 'html', 'utf-8')
-            msg.attach(html_part)
-            
-            # SMTP 발송
-            await asyncio.to_thread(NotificationService._send_smtp_email, msg)
-            
+        """이메일 발송 (SES)"""
+        if not settings.SES_ENABLED:
+            print("SES 비활성화: 이메일 발송 스킵")
             return True
-            
-        except Exception as e:
-            print(f"이메일 발송 실패: {str(e)}")
+
+        try:
+            ses_client = boto3.client('ses', region_name=settings.AWS_REGION)
+            await asyncio.to_thread(
+                ses_client.send_email,
+                Source=f"{settings.EMAILS_FROM_NAME} <{settings.EMAILS_FROM_EMAIL}>",
+                Destination={'ToAddresses': [to_email]},
+                Message={
+                    'Subject': {'Data': subject, 'Charset': 'UTF-8'},
+                    'Body': {
+                        'Html': {'Data': html_content, 'Charset': 'UTF-8'}
+                    }
+                }
+            )
+            return True
+        except ClientError as e:
+            print(f"SES 이메일 발송 실패: {str(e)}")
             return False
 
     @staticmethod
-    def _send_smtp_email(msg: MimeMultipart) -> None:
-        """동기 SMTP 이메일 발송"""
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.starttls()
-            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-            server.send_message(msg)
+    async def publish_alert(subject: str, message: str, context: Optional[Dict[str, Any]] = None) -> bool:
+        """운영 알림을 SNS로 발행"""
+        if not settings.SNS_ALERTS_TOPIC_ARN:
+            return False
+        try:
+            sns = boto3.client('sns', region_name=settings.AWS_REGION)
+            payload = message
+            if context:
+                try:
+                    import json as _json
+                    payload = f"{message}\nContext: {_json.dumps(context)[:2000]}"
+                except Exception:
+                    pass
+            await asyncio.to_thread(
+                sns.publish,
+                TopicArn=settings.SNS_ALERTS_TOPIC_ARN,
+                Subject=subject,
+                Message=payload,
+            )
+            return True
+        except ClientError:
+            return False
+
+    # Pipeline convenience wrappers
+    async def send_job_completion_notification(self, job_id: str) -> bool:
+        try:
+            from app.core.database import get_async_session
+            from app.services.job_service import JobService
+            async with get_async_session() as db:
+                job = await JobService.get_job(db, job_id)
+                if not job or not job.video:
+                    return False
+                user = getattr(job.video, 'user', None)
+                if not user:
+                    from sqlalchemy import select as _select
+                    from app.models.user import User as _User
+                    res = await db.execute(_select(_User).where(_User.id == job.user_id))
+                    user = res.scalar_one_or_none()
+                processing_duration = "-"
+                if job.started_at and job.completed_at:
+                    delta = job.completed_at - job.started_at
+                    processing_duration = str(delta)
+                download_url = f"{settings.FRONTEND_URL}/videos/{job.video_id}"
+                return await NotificationService.send_video_processing_complete_notification(
+                    user=user,
+                    video_title=job.video.title if job.video else "",
+                    target_language=getattr(job, 'target_language', None) or job.job_config.get('target_language', ''),
+                    processing_duration=processing_duration,
+                    download_url=download_url,
+                )
+        except Exception:
+            return False
+
+    async def send_job_error_notification(self, job_id: str, step_name: str, error_message: str) -> bool:
+        try:
+            from app.core.database import get_async_session
+            from app.services.job_service import JobService
+            async with get_async_session() as db:
+                job = await JobService.get_job(db, job_id)
+                if not job or not job.video:
+                    return False
+                user = getattr(job.video, 'user', None)
+                if not user:
+                    from sqlalchemy import select as _select
+                    from app.models.user import User as _User
+                    res = await db.execute(_select(_User).where(_User.id == job.user_id))
+                    user = res.scalar_one_or_none()
+                retry_url = f"{settings.FRONTEND_URL}/videos/{job.video_id}"
+                await NotificationService.publish_alert(
+                    subject="Dubbing pipeline failed",
+                    message=f"Job {job_id} failed at step {step_name}: {error_message}",
+                    context={"job_id": job_id, "step": step_name}
+                )
+                return await NotificationService.send_video_processing_failed_notification(
+                    user=user,
+                    video_title=job.video.title if job.video else "",
+                    error_message=error_message,
+                    retry_url=retry_url,
+                )
+        except Exception:
+            return False
+
+    async def send_job_cancellation_notification(self, job_id: str) -> bool:
+        try:
+            await NotificationService.publish_alert(
+                subject="Dubbing job cancelled",
+                message=f"Job {job_id} was cancelled",
+                context={"job_id": job_id}
+            )
+        except Exception:
+            pass
+        return True
 
     @staticmethod
     def _render_template(template: str, data: Dict[str, Any]) -> str:

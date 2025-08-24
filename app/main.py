@@ -71,19 +71,24 @@ async def lifespan(app: FastAPI):
         from app.core.database import get_async_session
         
         async for db in get_async_session():
-            # processing 상태로 남은 더빙 작업들 찾기
-            interrupted_jobs = await JobService.get_pending_jobs(db, job_type="dubbing")
-            processing_jobs = [job for job in interrupted_jobs if job.status == "processing"]
-            
-            if processing_jobs:
-                logger.info(f"🔄 중단된 더빙 작업 {len(processing_jobs)}개를 복구합니다...")
-                
-                # 백그라운드에서 재시작
+            # 진행 중 또는 대기 중인 더빙 작업 조회
+            active_jobs = await JobService.get_active_jobs(db, job_type="dubbing")
+
+            if active_jobs:
+                processing_jobs = [job for job in active_jobs if job.status == "processing"]
+                pending_jobs = [job for job in active_jobs if job.status == "pending"]
+
+                total_to_handle = len(processing_jobs) + len(pending_jobs)
+                logger.info(f"🔄 복구 대상 더빙 작업: processing={len(processing_jobs)}, pending={len(pending_jobs)}, total={total_to_handle}")
+
                 import asyncio
+                # processing은 재개, pending은 새 실행
                 for job in processing_jobs:
                     asyncio.create_task(DubbingService.resume_dubbing_pipeline(job.id))
-                
-                logger.info("✅ 더빙 작업 복구 완료")
+                for job in pending_jobs:
+                    asyncio.create_task(DubbingService.execute_dubbing_pipeline(job.id))
+
+                logger.info("✅ 더빙 작업 복구 트리거 완료")
             else:
                 logger.info("ℹ️  복구할 더빙 작업이 없습니다.")
             break
@@ -232,6 +237,7 @@ app.include_router(videos.router)
 
 # 작업 관리
 app.include_router(jobs.router)
+app.include_router(jobs.jobs_router)
 
 # 결제/구독
 app.include_router(billing.router)

@@ -348,6 +348,80 @@ class JobStatus(BaseModel):
             raise ValueError("must be one of enum values ('pending', 'processing', 'completed', 'failed', 'cancelled')")
         return value
 
+# ===== 작업 상세/목록 스키마 =====
+class JobStep(BaseModel):
+    """작업 단계 상세"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: Optional[StrictStr] = None
+    job_id: Optional[StrictStr] = None
+    step_name: Optional[StrictStr] = None
+    step_order: Optional[StrictInt] = None
+    status: Optional[StrictStr] = None
+    progress: Optional[Union[StrictFloat, StrictInt]] = None
+    weight: Optional[Union[StrictFloat, StrictInt]] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    error_message: Optional[StrictStr] = None
+    error_code: Optional[StrictStr] = None
+    input_data: Optional[Dict[str, Any]] = None
+    output_data: Optional[Dict[str, Any]] = None
+    logs: Optional[StrictStr] = None
+    extra_metadata: Optional[Dict[str, Any]] = None
+
+    @field_validator('status')
+    def step_status_validate_enum(cls, value):
+        if value is None:
+            return value
+        if value not in ('pending', 'processing', 'completed', 'failed', 'skipped',):
+            raise ValueError("must be one of enum values ('pending', 'processing', 'completed', 'failed', 'skipped')")
+        return value
+
+
+class Job(BaseModel):
+    """작업 상세"""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: Optional[StrictStr] = None
+    user_id: Optional[StrictStr] = None
+    video_id: Optional[StrictStr] = None
+    job_type: Optional[StrictStr] = None
+    status: Optional[StrictStr] = None
+    progress: Optional[Union[Annotated[float, Field(le=100, strict=True, ge=0)], Annotated[int, Field(le=100, strict=True, ge=0)]]] = None
+    target_language: Optional[StrictStr] = None
+    voice_id: Optional[StrictStr] = None
+    preserve_background_music: Optional[StrictBool] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    estimated_completion: Optional[datetime] = None
+    error_message: Optional[StrictStr] = None
+    error_code: Optional[StrictStr] = None
+    retry_count: Optional[StrictInt] = None
+    max_retries: Optional[StrictInt] = None
+    priority: Optional[StrictInt] = None
+    credits_cost: Optional[StrictInt] = None
+    job_config: Optional[Dict[str, Any]] = None
+    job_result: Optional[Dict[str, Any]] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    job_steps: Optional[List[JobStep]] = None
+
+    @field_validator('status')
+    def job_status_validate_enum(cls, value):
+        if value is None:
+            return value
+        if value not in ('pending', 'processing', 'completed', 'failed', 'cancelled',):
+            raise ValueError("must be one of enum values ('pending', 'processing', 'completed', 'failed', 'cancelled')")
+        return value
+
+
+class JobsResponse(BaseModel):
+    """작업 목록 응답"""
+    model_config = ConfigDict(from_attributes=True)
+
+    jobs: Optional[List[Job]] = None
+    pagination: Optional[Dict[str, Any]] = None
+
 # ===== 언어/음성 관련 스키마 =====
 class Language(BaseModel):
     """언어 정보"""

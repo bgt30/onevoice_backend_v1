@@ -47,8 +47,11 @@ def transcribe(workspace_path: str = ".", config_path: str = None):
     elif runtime == "elevenlabs":
         from ai.asr_backend.elevenlabs_asr import transcribe_audio_elevenlabs as ts
         rprint("[cyan]🎤 Transcribing audio with ElevenLabs API...[/cyan]")
+    elif runtime == "openai":
+        from ai.asr_backend.openai_asr import transcribe_audio_openai as ts
+        rprint("[cyan]🎤 Transcribing audio with OpenAI API...[/cyan]")
     else:
-        raise ValueError(f"Unsupported runtime: {runtime}. Supported options: cloud, elevenlabs")
+        raise ValueError(f"Unsupported runtime: {runtime}. Supported options: cloud, elevenlabs, openai")
 
     for start, end in segments:
         result = ts(get_raw_audio_file(workspace_path), vocal_audio, start, end)

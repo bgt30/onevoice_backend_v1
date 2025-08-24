@@ -97,5 +97,5 @@
 - **send_video_processing_complete_notification(user, video_title, target_language, processing_duration, download_url) -> bool**: 영상 더빙 완료 알림 이메일 발송.
 - **send_video_processing_failed_notification(user, video_title, error_message, retry_url=None) -> bool**: 영상 처리 실패 알림 이메일 발송.
 - **_send_email(to_email, subject, html_content) -> bool**: SMTP를 통한 HTML 이메일 발송 처리.
-- **_send_smtp_email(msg) -> None**: 동기 SMTP 이메일 발송 실행.
+Removed SMTP send path; email delivery handled via Amazon SES only.
 - **_render_template(template, data) -> str**: Jinja2를 사용한 이메일 템플릿 렌더링.

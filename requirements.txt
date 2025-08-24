@@ -27,11 +27,6 @@ python-decouple
 passlib[bcrypt]
 fastapi-jwt-auth
 
-# Task Queue & Background Processing
-# celery[redis]
-# kombu
-# flower
-
 # File Handling & Media Processing
 aiofiles
 python-magic

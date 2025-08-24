@@ -236,6 +236,10 @@ class DubbingService:
                 job = await JobService.get_job(db, job_id)
                 if not job:
                     raise HTTPException(status_code=404, detail="Job not found")
+                # idempotency: 이미 종료 상태면 실행 생략
+                if job.status in ["completed", "failed", "cancelled"]:
+                    logger.info(f"Skip pipeline for terminal job {job_id} with status {job.status}")
+                    return
                 
                 logger.info(f"Starting dubbing pipeline for job {job_id}")
                 

@@ -58,10 +58,7 @@ ANTHROPIC_API_KEY=your-anthropic-api-key
 # 이메일 설정 (선택사항)
 # ========================================
 
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
+# SMTP settings removed; using Amazon SES only
 EMAILS_FROM_EMAIL=noreply@onevoice.ai
 EMAILS_FROM_NAME=OneVoice
 

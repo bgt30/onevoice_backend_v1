@@ -18,22 +18,28 @@ class StorageService:
     """S3 스토리지 관리 관련 서비스"""
 
     def __init__(self):
-        """S3 클라이언트 초기화"""
-        if not settings.AWS_ACCESS_KEY_ID or not settings.AWS_SECRET_ACCESS_KEY:
+        """S3 클라이언트 초기화
+
+        - 기본은 IAM Role 자격증명 사용
+        - 로컬/개발에서만 명시적 키 사용
+        """
+        session_kwargs = {"region_name": settings.AWS_REGION}
+        client_kwargs = {}
+
+        if not settings.AWS_USE_IAM_ROLE and settings.AWS_ACCESS_KEY_ID and settings.AWS_SECRET_ACCESS_KEY:
+            # 명시적 키 사용 (로컬/개발)
+            client_kwargs.update({
+                'aws_access_key_id': settings.AWS_ACCESS_KEY_ID,
+                'aws_secret_access_key': settings.AWS_SECRET_ACCESS_KEY,
+            })
+
+        try:
+            self.s3_client = boto3.client('s3', **session_kwargs, **client_kwargs)
+            # 호출 테스트 (리스트 버킷 권한이 없을 수 있으므로 단순한 예외 검출로 대체)
+            self.use_s3 = True
+        except (ClientError, NoCredentialsError):
             self.s3_client = None
             self.use_s3 = False
-        else:
-            try:
-                self.s3_client = boto3.client(
-                    's3',
-                    aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                    region_name=settings.AWS_REGION
-                )
-                self.use_s3 = True
-            except (ClientError, NoCredentialsError):
-                self.s3_client = None
-                self.use_s3 = False
 
     async def create_presigned_upload_url(
         self,

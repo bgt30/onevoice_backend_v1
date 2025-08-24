@@ -479,6 +479,23 @@ class JobService:
         return result.scalars().all()
 
     @staticmethod
+    async def get_active_jobs(
+        db: AsyncSession,
+        job_type: Optional[str] = None,
+        limit: int = 50
+    ) -> List[Job]:
+        """진행 중이거나 대기 중인 작업 조회"""
+        query = select(Job).where(Job.status.in_(["pending", "processing"]))
+
+        if job_type:
+            query = query.where(Job.job_type == job_type)
+
+        query = query.order_by(Job.priority.asc(), Job.created_at.asc()).limit(limit)
+
+        result = await db.execute(query)
+        return result.scalars().all()
+
+    @staticmethod
     async def record_credit_usage(
         db: AsyncSession,
         job: Job,

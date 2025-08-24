@@ -63,12 +63,7 @@ def ask_gpt(prompt, resp_type=None, valid_def=None, workspace_path: str = ".", c
         return cached
 
     model = load_key("api.model", config_path)
-    base_url = load_key("api.base_url", config_path)
-    if 'ark' in base_url:
-        base_url = "https://ark.cn-beijing.volces.com/api/v3" # huoshan base url
-    elif 'v1' not in base_url:
-        base_url = base_url.strip('/') + '/v1'
-    client = OpenAI(api_key=load_key("api.key", config_path), base_url=base_url)
+    client = OpenAI(api_key=load_key("api.key", config_path))
     response_format = {"type": "json_object"} if resp_type == "json" and load_key("api.llm_support_json", config_path) else None
 
     messages = [{"role": "user", "content": prompt}]
@@ -77,7 +72,8 @@ def ask_gpt(prompt, resp_type=None, valid_def=None, workspace_path: str = ".", c
         model=model,
         messages=messages,
         response_format=response_format,
-        timeout=300
+        timeout=900,
+        service_tier="flex",
     )
     resp_raw = client.chat.completions.create(**params)
 

@@ -3,6 +3,18 @@
 ## Overview
 This document outlines all required files, libraries, and dependencies for integrating a FastAPI backend into the onevoice project. Always proceed in a virtual environment.
 
+## Architecture & Deployment Topology
+
+- Web/API runtime on AWS Elastic Beanstalk (web server environment)
+- Worker runtime on AWS Elastic Beanstalk (worker environment)
+- Message queue: Amazon SQS (used by the worker to process long-running dubbing jobs)
+- Database: Amazon RDS (PostgreSQL)
+- Object storage: Amazon S3 for original sources and generated outputs
+- Outbound email: Amazon SES
+- Centralized logs/metrics: Amazon CloudWatch
+- Developer/admin notifications: Amazon SNS
+- Custom domain and DNS: Amazon Route 53
+
 ## Core FastAPI Dependencies
 
 ### Web Framework & Server
@@ -40,9 +52,7 @@ This document outlines all required files, libraries, and dependencies for integ
 ## Task Queue & Background Processing
 
 ### Task Queue
-- **celery[redis]** - Distributed task queue
-- **kombu** - Messaging library for Python
-- **flower** - Web-based tool for monitoring Celery clusters
+- **boto3** - AWS SDK for Python (required for SQS/SES/SNS/S3 integrations)
 
 ### Async Support
 - **asyncio** - Async I/O support (built-in Python 3.10)
@@ -72,13 +82,12 @@ This document outlines all required files, libraries, and dependencies for integ
 - **pytest-asyncio** - Async support for pytest
 - **httpx** - For testing HTTP endpoints
 - **pytest-cov** - Coverage reporting
+- **moto** - Mock AWS services (S3/SQS/SES/SNS) for tests
 
 ## Monitoring & Logging
 
 ### Health Checks
 - **healthcheck** - Health check endpoints
-
-## Environment & Configuration
 
 ### Environment Management
 - **python-dotenv** - Load environment variables from .env
@@ -95,5 +104,13 @@ This document outlines all required files, libraries, and dependencies for integ
 ### Migration Strategy
 - Gradual migration of features
 - Maintain backward compatibility
+
+### AWS Integrations
+- S3: store originals and outputs; use presigned URLs for upload/download
+- SQS: broker for background jobs processed by the worker EB environment
+- SES: send transactional emails (password reset, job notifications)
+- SNS: developer/admin operational alerts
+- CloudWatch: centralized logging and metrics via `CloudWatch Agent`
+- Route 53: DNS for custom domains
 
 This comprehensive requirements list ensures all necessary components are available for a successful FastAPI backend integration with the onevoice project. 
