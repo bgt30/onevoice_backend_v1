@@ -28,7 +28,6 @@ def transcribe_audio_openai(raw_audio_path: str, vocal_audio_path: str, start: f
 
     language = load_key("whisper.language", config_path, workspace_path)
     api_key = load_key("whisper.openai_api_key", config_path, workspace_path)
-    base_url = load_key("whisper.openai_base_url", config_path, workspace_path)
 
     # Prepare audio slice
     y, sr = librosa.load(vocal_audio_path, sr=16000)
@@ -42,7 +41,7 @@ def transcribe_audio_openai(raw_audio_path: str, vocal_audio_path: str, start: f
     sf.write(audio_buffer, y_slice, sr, format='WAV', subtype='PCM_16')
     audio_buffer.seek(0)
 
-    url = f"{base_url.rstrip('/')}/v1/audio/transcriptions"
+    url = "https://api.openai.com/v1/audio/transcriptions"
     files = {"file": ("audio_slice.wav", audio_buffer, "audio/wav")}
     # Use multipart form fields; list values are sent as repeated keys with [] suffix
     data = [

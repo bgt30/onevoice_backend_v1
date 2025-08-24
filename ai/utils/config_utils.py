@@ -38,6 +38,10 @@ def load_key(key, config_path: str = None, workspace_path: str = None):
             value = value[k]
         else:
             raise KeyError(f"Key '{k}' not found in configuration")
+    # Basic ${ENV} substitution (<=10 lines total change)
+    if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+        env_name = value[2:-1]
+        return os.getenv(env_name, "")
     return value
 
 def update_key(key, new_value, config_path: str = None, workspace_path: str = None):
