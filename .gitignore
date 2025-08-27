@@ -193,9 +193,7 @@ node_modules/
 # OS specific
 
 .cursor/
-
 .ebextensions/
-
 generated-client/
-
-
+tests/
+scripts/
