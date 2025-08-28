@@ -193,7 +193,6 @@ node_modules/
 # OS specific
 
 .cursor/
-.ebextensions/
 generated-client/
 tests/
 # Elastic Beanstalk Files
