@@ -197,3 +197,7 @@ node_modules/
 generated-client/
 tests/
 scripts/
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
