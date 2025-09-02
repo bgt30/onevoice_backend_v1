@@ -11,7 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 # API 라우터 임포트
-from app.api import auth, billing, jobs, users, videos
+from app.api import auth, billing, jobs, users, videos, webhooks
 
 # 모니터링 및 설정 임포트
 from monitoring.health_check import router as health_router
@@ -241,6 +241,9 @@ app.include_router(jobs.jobs_router)
 
 # 결제/구독
 app.include_router(billing.router)
+
+# 웹훅
+app.include_router(webhooks.router)
 
 # 알림은 이메일로만 처리 (NotificationService)
 

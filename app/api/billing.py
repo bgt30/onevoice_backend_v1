@@ -134,7 +134,7 @@ async def create_setup_intent(
     current_user: UserModel = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db)
 ) -> SetupIntentResponse:
-    """Create Stripe setup intent for adding payment method"""
+    """Create Paddle client-side token for adding payment method"""
     return await BillingService.create_setup_intent(current_user)
 
 

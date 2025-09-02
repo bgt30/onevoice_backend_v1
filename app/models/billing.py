@@ -18,10 +18,10 @@ class BillingHistory(BaseModel):
         index=True
     )
     
-    # Stripe 정보
-    stripe_invoice_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
-    stripe_charge_id: Mapped[Optional[str]] = mapped_column(String(100))
-    stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(String(100))
+    # Paddle 정보
+    paddle_transaction_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
+    paddle_subscription_id: Mapped[Optional[str]] = mapped_column(String(100))
+    paddle_invoice_id: Mapped[Optional[str]] = mapped_column(String(100))
     
     # 결제 정보
     amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
@@ -31,12 +31,15 @@ class BillingHistory(BaseModel):
     status: Mapped[str] = mapped_column(
         String(20), 
         nullable=False
-    )  # paid, failed, pending, refunded
+    )  # completed, pending, failed, cancelled
     
     payment_type: Mapped[str] = mapped_column(
         String(20), 
         nullable=False
-    )  # subscription, one_time, refund
+    )  # subscription, one_time, refund, adjustment
+    
+    # 결제 제공자
+    payment_provider: Mapped[str] = mapped_column(String(20), default="paddle", nullable=False)
     
     # 상세 정보
     description: Mapped[Optional[str]] = mapped_column(String(500))

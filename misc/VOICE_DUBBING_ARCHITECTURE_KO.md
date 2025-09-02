@@ -141,9 +141,9 @@ GET /api/v1/videos?page=1&perPage=20&sortBy=created_at&sortOrder=desc
 
 | 테이블 | 핵심 컬럼 | 비고 |
 |---|---|---|
-| **users** | id, email, password_hash, avatar_url, stripe_customer_id, subscription_id, notification_preferences, last_activity_at | 사용자 기본 정보 & Stripe 연결 |
+| **users** | id, email, password_hash, avatar_url, paddle_customer_id, subscription_id, notification_preferences, last_activity_at | 사용자 기본 정보 & Paddle 연결 |
 | **subscription_plans** | id, name, price, credits_per_month, max_video_duration, features | 구독 요금제 정의 |
-| **subscriptions** | id, user_id, plan_id, status, current_period_start, current_period_end, stripe_subscription_id | 활성 구독 관리 |
+| **subscriptions** | id, user_id, plan_id, status, current_period_start, current_period_end, paddle_subscription_id | 활성 구독 관리 |
 | **videos** | id, user_id, title, src_url, duration, language_detected, file_size_bytes, checksum_sha256, status | 영상 메타데이터 (불변) |
 | **jobs** | id, video_id, user_id, job_type, current_step, total_steps, status, progress%, settings, error_details, estimated_completion_at | 작업 상태 추적 |
 | **job_steps** | id, job_id, step_name, status, input_data, output_data, processing_time_ms, worker_id | 단계별 세부 추적 |
@@ -152,7 +152,7 @@ GET /api/v1/videos?page=1&perPage=20&sortBy=created_at&sortOrder=desc
 
 | **voice_options** | id, language_code, voice_name, voice_provider, sample_url | 음성 옵션 관리 |
 | **user_notifications** | id, user_id, type, title, message, read_at, created_at | 알림 관리 |
-| **billing_history** | id, user_id, amount, status, stripe_invoice_id, created_at | 결제 이력 |
+| **billing_history** | id, user_id, amount, status, paddle_transaction_id, created_at | 결제 이력 |
 | **worker_events** | job_id, timestamp, payload JSONB | Sentry 추적 & 메트릭용 |
 
 ### 주요 Enum 타입

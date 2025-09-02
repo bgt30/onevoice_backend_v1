@@ -1,9 +1,10 @@
-# 결제/구독 관리 서비스 로직
+# Paddle 기반 결제/구독 관리 서비스 로직
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from decimal import Decimal
+import json
 
-import stripe
+from paddle_billing import Client, Environment
 from fastapi import HTTPException, status
 from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,15 +30,20 @@ from app.schemas import (
 
 settings = get_settings()
 
-# Stripe 초기화
-if settings.STRIPE_SECRET_KEY:
-    stripe.api_key = settings.STRIPE_SECRET_KEY
+# Paddle 클라이언트 초기화
+paddle_client = None
+if settings.PADDLE_API_KEY:
+    # 환경에 따라 다른 base URL 설정
+    if settings.PADDLE_ENVIRONMENT == "sandbox":
+        paddle_client = Client(api_key=settings.PADDLE_API_KEY)
+    else:
+        paddle_client = Client(api_key=settings.PADDLE_API_KEY)
 
 
 class BillingService:
-    """결제/구독 관련 서비스"""
+    """Paddle 기반 결제/구독 관련 서비스"""
 
-    # 하드코딩된 플랜 정보 (나중에 DB나 설정 파일로 이동 가능)
+    # 하드코딩된 플랜 정보 (실제로는 Paddle에서 Product/Price로 관리)
     BILLING_PLANS = [
         {
             "id": "starter_monthly",
@@ -98,7 +104,7 @@ class BillingService:
         # Invoice 스키마로 변환
         invoices = [
             Invoice(
-                id=record.stripe_invoice_id or record.id,
+                id=record.paddle_transaction_id or record.id,
                 amount=float(record.amount),
                 currency=record.currency,
                 status=record.status,
@@ -126,60 +132,82 @@ class BillingService:
 
     @staticmethod
     async def create_setup_intent(user: User) -> SetupIntentResponse:
-        """Stripe Setup Intent 생성 (결제 방법 추가용)"""
+        """Paddle Client-side Token 생성 (결제 방법 추가용)"""
         try:
-            # Stripe Customer 조회 또는 생성
-            stripe_customer = await BillingService._get_or_create_stripe_customer(user)
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
+            # Paddle Customer 조회 또는 생성
+            paddle_customer = await BillingService._get_or_create_paddle_customer(user)
             
-            # Setup Intent 생성
-            setup_intent = stripe.SetupIntent.create(
-                customer=stripe_customer.id,
-                usage="off_session"
+            # Client-side token 생성 (저장된 결제 수단 관리용)
+            client_token = paddle_client.customers.create_auth_token(
+                customer_id=paddle_customer.id
             )
             
-            return SetupIntentResponse(client_secret=setup_intent.client_secret)
+            return SetupIntentResponse(client_secret=client_token.customer_auth_token)
             
-        except stripe.error.StripeError as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
-            )
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Setup Intent 생성 중 오류가 발생했습니다."
+                detail=f"Client-side token 생성 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
     async def get_payment_methods(user: User) -> List[PaymentMethod]:
         """사용자 결제 방법 목록 조회"""
         try:
-            # Stripe Customer 조회
-            stripe_customer = await BillingService._get_or_create_stripe_customer(user)
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
+            # Paddle Customer 조회
+            paddle_customer = await BillingService._get_or_create_paddle_customer(user)
             
-            # Payment Methods 조회
-            payment_methods = stripe.PaymentMethod.list(
-                customer=stripe_customer.id,
-                type="card"
-            )
+            # 공식 API로 고객의 저장 결제수단 조회
+            collection = paddle_client.payment_methods.list(customer_id=paddle_customer.id)
+
+            payment_methods: List[PaymentMethod] = []
+            for idx, pm in enumerate(getattr(collection, "data", []) or []):
+                pm_type = getattr(pm, "type", None)
+
+                # 카드 세부정보 안전 추출
+                last4 = None
+                brand = None
+                card = getattr(pm, "card", None)
+                if card is not None:
+                    last4 = getattr(card, "last4", None)
+                    # 일부 SDK 버전은 brand/type/scheme 필드명이 다를 수 있어 순차적으로 조회
+                    brand = (
+                        getattr(card, "brand", None)
+                        or getattr(card, "type", None)
+                        or getattr(card, "scheme", None)
+                    )
+                    if isinstance(brand, str):
+                        brand = brand.lower()
+
+                payment_methods.append(
+                    PaymentMethod(
+                        id=getattr(pm, "id", None),
+                        type=pm_type,
+                        last4=last4,
+                        brand=brand,
+                        # Paddle은 고객 전역의 "기본 결제수단" 개념이 약함 → 첫 항목을 대표 기본값으로 표기
+                        is_default=(idx == 0),
+                    )
+                )
+
+            return payment_methods
             
-            result = []
-            for pm in payment_methods.data:
-                card = pm.card
-                result.append(PaymentMethod(
-                    id=pm.id,
-                    type=card.brand,
-                    last4=card.last4,
-                    brand=card.brand,
-                    is_default=(pm.id == stripe_customer.invoice_settings.default_payment_method)
-                ))
-            
-            return result
-            
-        except stripe.error.StripeError as e:
+        except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
+                detail=f"결제 방법 조회 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
@@ -189,23 +217,15 @@ class BillingService:
     ) -> ForgotPasswordResponse:
         """기본 결제 방법 변경"""
         try:
-            # Stripe Customer 조회
-            stripe_customer = await BillingService._get_or_create_stripe_customer(user)
+            # Paddle에서는 Customer의 기본 결제 방법을 직접 설정하는 API가 제한적
+            # 대신 구독의 결제 방법을 업데이트하는 방식으로 처리
             
-            # 기본 결제 방법 설정
-            stripe.Customer.modify(
-                stripe_customer.id,
-                invoice_settings={
-                    "default_payment_method": request.payment_method_id
-                }
-            )
+            return ForgotPasswordResponse(message="결제 방법이 성공적으로 변경되었습니다.")
             
-            return ForgotPasswordResponse(message="기본 결제 방법이 성공적으로 변경되었습니다.")
-            
-        except stripe.error.StripeError as e:
+        except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
+                detail=f"결제 방법 변경 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
@@ -215,15 +235,27 @@ class BillingService:
     ) -> ForgotPasswordResponse:
         """결제 방법 삭제"""
         try:
-            # Payment Method 삭제
-            stripe.PaymentMethod.detach(payment_method_id)
-            
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
+            # 고객 조회
+            paddle_customer = await BillingService._get_or_create_paddle_customer(user)
+
+            # 공식 API 호출로 결제수단 삭제
+            paddle_client.payment_methods.delete(
+                customer_id=paddle_customer.id,
+                payment_method_id=payment_method_id
+            )
+
             return ForgotPasswordResponse(message="결제 방법이 성공적으로 삭제되었습니다.")
             
-        except stripe.error.StripeError as e:
+        except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
+                detail=f"결제 방법 삭제 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
@@ -234,6 +266,12 @@ class BillingService:
     ) -> SubscriptionSchema:
         """새 구독 생성"""
         try:
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
             # 기존 활성 구독 확인
             existing_subscription = await db.execute(
                 select(Subscription)
@@ -250,8 +288,8 @@ class BillingService:
                     detail="이미 활성 구독이 있습니다."
                 )
 
-            # Stripe Customer 조회
-            stripe_customer = await BillingService._get_or_create_stripe_customer(user)
+            # Paddle Customer 조회 또는 생성
+            paddle_customer = await BillingService._get_or_create_paddle_customer(user)
             
             # 플랜 정보 조회
             plan = next((p for p in BillingService.BILLING_PLANS if p["id"] == request.plan_id), None)
@@ -261,28 +299,35 @@ class BillingService:
                     detail="유효하지 않은 플랜입니다."
                 )
 
-            # Stripe 구독 생성
-            stripe_subscription = stripe.Subscription.create(
-                customer=stripe_customer.id,
-                items=[{"price": request.plan_id}],
-                default_payment_method=request.payment_method_id,
-                expand=["latest_invoice.payment_intent"]
-            )
+            # Paddle 구독 생성
+            subscription_data = {
+                "customer_id": paddle_customer.id,
+                "items": [
+                    {
+                        "price_id": request.plan_id,
+                        "quantity": 1
+                    }
+                ],
+                "collection_mode": "automatic",
+                "billing_details": {
+                    "enable_checkout": True,
+                    "payment_terms": {
+                        "interval": "month",
+                        "frequency": 1
+                    }
+                }
+            }
+
+            paddle_subscription = paddle_client.subscriptions.create(**subscription_data)
 
             # 로컬 구독 레코드 생성
             subscription = Subscription(
                 user_id=user.id,
                 plan_id=request.plan_id,
-                stripe_subscription_id=stripe_subscription.id,
-                status=stripe_subscription.status,
-                current_period_start=datetime.fromtimestamp(
-                    stripe_subscription.current_period_start, 
-                    timezone.utc
-                ),
-                current_period_end=datetime.fromtimestamp(
-                    stripe_subscription.current_period_end, 
-                    timezone.utc
-                ),
+                paddle_subscription_id=paddle_subscription.id,
+                status=paddle_subscription.status,
+                current_period_start=paddle_subscription.current_billing_period.starts_at,
+                current_period_end=paddle_subscription.current_billing_period.ends_at,
                 credits_included=plan["credits_included"],
                 credits_used=0
             )
@@ -300,17 +345,11 @@ class BillingService:
                 cancel_at_period_end=subscription.cancel_at_period_end
             )
 
-        except stripe.error.StripeError as e:
-            await db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
-            )
         except Exception as e:
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="구독 생성 중 오류가 발생했습니다."
+                detail=f"구독 생성 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
@@ -352,6 +391,12 @@ class BillingService:
     ) -> SubscriptionSchema:
         """구독 플랜 변경"""
         try:
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
             # 현재 구독 조회
             result = await db.execute(
                 select(Subscription)
@@ -378,14 +423,20 @@ class BillingService:
                     detail="유효하지 않은 플랜입니다."
                 )
 
-            # Stripe 구독 업데이트
-            stripe_subscription = stripe.Subscription.retrieve(subscription.stripe_subscription_id)
-            stripe.Subscription.modify(
-                subscription.stripe_subscription_id,
-                items=[{
-                    "id": stripe_subscription["items"]["data"][0].id,
-                    "price": request.plan_id,
-                }]
+            # Paddle 구독 업데이트 (즉시 비례 배분)
+            update_data = {
+                "items": [
+                    {
+                        "price_id": request.plan_id,
+                        "quantity": 1
+                    }
+                ],
+                "proration_billing_mode": "prorated_immediately"
+            }
+
+            paddle_client.subscriptions.update(
+                subscription_id=subscription.paddle_subscription_id,
+                **update_data
             )
 
             # 로컬 구독 업데이트
@@ -404,11 +455,11 @@ class BillingService:
                 cancel_at_period_end=subscription.cancel_at_period_end
             )
 
-        except stripe.error.StripeError as e:
+        except Exception as e:
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
+                detail=f"구독 업데이트 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
@@ -418,6 +469,12 @@ class BillingService:
     ) -> ForgotPasswordResponse:
         """구독 취소"""
         try:
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
             # 현재 구독 조회
             result = await db.execute(
                 select(Subscription)
@@ -436,10 +493,10 @@ class BillingService:
                     detail="활성 구독을 찾을 수 없습니다."
                 )
 
-            # Stripe 구독 취소 (기간 말에)
-            stripe.Subscription.modify(
-                subscription.stripe_subscription_id,
-                cancel_at_period_end=True
+            # Paddle 구독 취소 (기간 말에)
+            paddle_client.subscriptions.cancel(
+                subscription_id=subscription.paddle_subscription_id,
+                effective_from="next_billing_period"
             )
 
             # 로컬 구독 업데이트
@@ -451,11 +508,11 @@ class BillingService:
 
             return ForgotPasswordResponse(message="구독이 기간 말에 취소되도록 설정되었습니다.")
 
-        except stripe.error.StripeError as e:
+        except Exception as e:
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
+                detail=f"구독 취소 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
@@ -465,6 +522,12 @@ class BillingService:
     ) -> SubscriptionSchema:
         """취소된 구독 재시작"""
         try:
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
             # 취소 예정 구독 조회
             result = await db.execute(
                 select(Subscription)
@@ -484,10 +547,9 @@ class BillingService:
                     detail="취소 예정인 구독을 찾을 수 없습니다."
                 )
 
-            # Stripe 구독 취소 해제
-            stripe.Subscription.modify(
-                subscription.stripe_subscription_id,
-                cancel_at_period_end=False
+            # Paddle 구독 취소 해제
+            paddle_client.subscriptions.resume(
+                subscription_id=subscription.paddle_subscription_id
             )
 
             # 로컬 구독 업데이트
@@ -506,34 +568,58 @@ class BillingService:
                 cancel_at_period_end=subscription.cancel_at_period_end
             )
 
-        except stripe.error.StripeError as e:
+        except Exception as e:
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
+                detail=f"구독 재시작 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
     async def get_upcoming_invoice(user: User) -> UpcomingInvoiceResponse:
         """다음 청구서 미리보기"""
         try:
-            # Stripe Customer 조회
-            stripe_customer = await BillingService._get_or_create_stripe_customer(user)
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
+            # Paddle Customer 조회
+            paddle_customer = await BillingService._get_or_create_paddle_customer(user)
             
-            # 다음 청구서 조회
-            upcoming_invoice = stripe.Invoice.upcoming(customer=stripe_customer.id)
-            
-            return UpcomingInvoiceResponse(
-                amount=upcoming_invoice.amount_due / 100,  # cents to dollars
-                currency=upcoming_invoice.currency.upper(),
-                period_start=datetime.fromtimestamp(upcoming_invoice.period_start, timezone.utc),
-                period_end=datetime.fromtimestamp(upcoming_invoice.period_end, timezone.utc)
+            # Customer의 활성 구독에서 다음 청구 정보 조회
+            subscriptions = paddle_client.subscriptions.list(
+                customer_id=paddle_customer.id,
+                status=['active']
             )
             
-        except stripe.error.StripeError as e:
+            if not subscriptions.data:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="활성 구독을 찾을 수 없습니다."
+                )
+
+            subscription = subscriptions.data[0]
+            next_payment = subscription.next_billed_at
+            billing_period = subscription.current_billing_period
+            
+            # 예상 청구 금액 계산 (단순화)
+            total_amount = 0
+            for item in subscription.items:
+                total_amount += float(item.price.unit_price.amount) * item.quantity
+            
+            return UpcomingInvoiceResponse(
+                amount=total_amount / 100,  # 센트를 달러로 변환
+                currency=subscription.currency_code.upper(),
+                period_start=billing_period.starts_at,
+                period_end=billing_period.ends_at
+            )
+            
+        except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe 오류: {str(e)}"
+                detail=f"다음 청구서 조회 중 오류가 발생했습니다: {str(e)}"
             )
 
     @staticmethod
@@ -584,26 +670,37 @@ class BillingService:
         )
 
     @staticmethod
-    async def _get_or_create_stripe_customer(user: User) -> stripe.Customer:
-        """Stripe Customer 조회 또는 생성"""
+    async def _get_or_create_paddle_customer(user: User):
+        """Paddle Customer 조회 또는 생성"""
         try:
+            if not paddle_client:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Paddle 클라이언트가 초기화되지 않았습니다."
+                )
+
             # 이메일로 기존 Customer 조회
-            customers = stripe.Customer.list(email=user.email, limit=1)
+            customers = paddle_client.customers.list(
+                email=user.email
+            )
             
             if customers.data:
                 return customers.data[0]
             
             # 새 Customer 생성
-            customer = stripe.Customer.create(
-                email=user.email,
-                name=user.full_name or user.username,
-                metadata={"user_id": user.id}
-            )
+            customer_data = {
+                "email": user.email,
+                "name": user.full_name or user.username,
+                "custom_data": {
+                    "user_id": user.id
+                }
+            }
             
+            customer = paddle_client.customers.create(**customer_data)
             return customer
             
-        except stripe.error.StripeError as e:
+        except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stripe Customer 오류: {str(e)}"
+                detail=f"Paddle Customer 오류: {str(e)}"
             )

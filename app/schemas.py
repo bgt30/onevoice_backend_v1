@@ -195,11 +195,14 @@ class PaymentMethod(BaseModel):
     brand: Optional[StrictStr] = None
     is_default: Optional[StrictBool] = None
 
-class SetupIntentResponse(BaseModel):
-    """결제 설정 응답"""
+class PaymentSetupResponse(BaseModel):
+    """Paddle 결제 설정 응답"""
     model_config = ConfigDict(from_attributes=True)
     
     client_secret: Optional[StrictStr] = None
+
+# 하위 호환성을 위한 alias
+SetupIntentResponse = PaymentSetupResponse
 
 class Invoice(BaseModel):
     """청구서"""

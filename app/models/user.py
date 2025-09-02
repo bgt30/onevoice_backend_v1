@@ -71,8 +71,8 @@ class Subscription(BaseModel):
     )
     
     # 구독 정보
-    plan_id: Mapped[str] = mapped_column(String(100), nullable=False)  # Stripe plan ID
-    stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
+    plan_id: Mapped[str] = mapped_column(String(100), nullable=False)  # Paddle Price ID
+    paddle_subscription_id: Mapped[Optional[str]] = mapped_column(String(100), unique=True)
     
     # 상태
     status: Mapped[str] = mapped_column(

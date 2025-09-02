@@ -1,7 +1,7 @@
 # to-do
 - JobService.cleanup_old_jobs을 주기적으로 트리거 하도록 리팩토링.
 
-
+- PADDLE_WEBHOOK_SECRET 발급
 
 
 # done
@@ -72,3 +72,6 @@
 
 - DubbingService.resume_dubbing_pipeline을 사용하는 엔드포인트 추가
     - 사용자가 실패/중단 작업을 “재시작”할 API 추가
+    
+- strip를 paddle로 교체
+

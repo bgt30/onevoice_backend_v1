@@ -26,7 +26,7 @@ onevoice_backend_v1/
 │   │   ├──  __init__.py
 │   │   ├──  auth_service.py           # JWT, 인증 로직
 │   │   ├──  user_service.py           # 사용자 관리 로직
-│   │   ├──  billing_service.py        # Stripe 연동
+│   │   ├──  billing_service.py        # Paddle 연동
 │   │   ├──  video_service.py          # 비디오 CRUD
 │   │   ├──  job_service.py            # 작업 상태 관리
 │   │   ├──  notification_service.py   # 알림 발송

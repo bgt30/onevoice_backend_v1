@@ -1,0 +1,3775 @@
+{
+	"info": {
+		"_postman_id": "80d67ccb-f051-4c6a-8f8b-e7689fd3058b",
+		"name": "v1: Paddle API",
+		"description": "Paddle Billing is a complete subscription and recurring revenue management platform, designed for modern SaaS businesses. It helps you increase your revenue, retain customers, and scale your operations.\n\nThe Paddle API lets you create, read, and update information in your Paddle Billing system. You can use it to integrate Paddle with your app or third-party solutions.\n\nSee https://developer.paddle.com/ to learn more.\n\nContact Support:\n Name: Paddle Seller Support team\n Email: sellers@paddle.com",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40890307"
+	},
+	"item": [
+		{
+			"name": "Addresses",
+			"item": [
+				{
+					"name": "List addresses for a customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/addresses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"addresses"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "<string>",
+									"description": "Return entities that match a search query.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active,active",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Returns a paginated list of addresses for a customer. Use the query parameters to page through results.\n\nBy default, Paddle returns addresses that are `active`. Use the `status` query parameter to return addresses that are archived."
+					},
+					"response": []
+				},
+				{
+					"name": "Create an address for a customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"country_code\": \"<string>\",\n  \"description\": \"<string,null>\",\n  \"first_line\": \"<string,null>\",\n  \"second_line\": \"<string,null>\",\n  \"city\": \"<string,null>\",\n  \"postal_code\": \"<string,null>\",\n  \"region\": \"<string,null>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/addresses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"addresses"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Creates a new address for a customer.\n\nFor tax calculation, fraud prevention, and compliance purposes, you must include a `postal_code` when creating addresses for some countries. For example, ZIP codes in the USA and postcodes in the UK. See: [Supported countries](https://developer.paddle.com/concepts/sell/supported-countries-locales)\n\nIf successful, your response includes a copy of the new address entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get an address for a customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/addresses/:address_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"addresses",
+								":address_id"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								},
+								{
+									"key": "address_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the address entity to work with."
+								}
+							]
+						},
+						"description": "Returns an address for a customer using its ID and related customer ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update an address for a customer",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"<string,null>\",\n  \"first_line\": \"<string,null>\",\n  \"second_line\": \"<string,null>\",\n  \"city\": \"<string,null>\",\n  \"postal_code\": \"<string,null>\",\n  \"region\": \"<string,null>\",\n  \"country_code\": \"<string>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  },\n  \"status\": \"<string>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/addresses/:address_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"addresses",
+								":address_id"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								},
+								{
+									"key": "address_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the address entity to work with."
+								}
+							]
+						},
+						"description": "Updates an address for a customer using its ID and related customer ID.\n\nIf successful, your response includes a copy of the updated address entity."
+					},
+					"response": []
+				}
+			],
+			"description": "Address entities hold billing address information for a customer. They're sub-entities of customers."
+		},
+		{
+			"name": "Adjustments",
+			"item": [
+				{
+					"name": "Create an adjustment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"<string>\",\n  \"transaction_id\": \"<string>\",\n  \"reason\": \"<string>\",\n  \"type\": \"partial\",\n  \"tax_mode\": \"internal\",\n  \"items\": [\n    {\n      \"item_id\": \"<string>\",\n      \"type\": \"<string>\",\n      \"amount\": \"<string,null>\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/adjustments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"adjustments"
+							]
+						},
+						"description": "Creates an adjustment for one or more transaction items.\n\nYou can create adjustments to refund or credit all or part of a transaction and its items:\n\n* Refunds return an amount to a customer's original payment method. You can create refund adjustments for transactions that are `completed`.\n* Credits reduce the amount that a customer has to pay for a transaction. You can create credit adjustments for manually-collected transactions that are `billed` or `past_due`.\n\nYou can create adjustments to refund transactions that are `completed`, or to reduce the amount to due on manually-collected transactions that are `billed` or `past_due`.\nMost refunds for live accounts are created with the status of `pending_approval` until reviewed by Paddle, but [some are automatically approved](https://developer.paddle.com/build/transactions/create-transaction-adjustments#background-refunds). For sandbox accounts, Paddle automatically approves refunds every ten minutes.\n\nAdjustments can apply to some or all items on a transaction. You'll need the Paddle ID of the transaction to create a refund or credit for, along with the Paddle ID of any transaction items (`details.line_items[].id`).\n\nIf successful, your response includes a copy of the new adjustment entity."
+					},
+					"response": []
+				},
+				{
+					"name": "List adjustments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/adjustments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"adjustments"
+							],
+							"query": [
+								{
+									"key": "action",
+									"value": "<string>",
+									"description": "Return entities for the specified action.",
+									"disabled": true
+								},
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "customer_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified customer. Use a comma-separated list to specify multiple customer IDs.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `10`; Maximum: `50`.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								},
+								{
+									"key": "subscription_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified subscription. Use a comma-separated list to specify multiple subscription IDs.",
+									"disabled": true
+								},
+								{
+									"key": "transaction_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified transaction. Use a comma-separated list to specify multiple transaction IDs.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of adjustments. Use the query parameters to page through results."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a PDF credit note for an adjustment",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/adjustments/:adjustment_id/credit-note",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"adjustments",
+								":adjustment_id",
+								"credit-note"
+							],
+							"query": [
+								{
+									"key": "disposition",
+									"value": "attachment",
+									"description": "Determine whether the generated URL should download the PDF as an attachment saved locally, or open it inline in the browser.\n\nDefault: `attachment`.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "adjustment_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the adjustment entity to work with."
+								}
+							]
+						},
+						"description": "Returns a link to a credit note PDF for an adjustment.\n\nCredit note PDFs are created for refunds and credits as a record of an adjustment.\n\nThe link returned is not a permanent link. It expires after an hour."
+					},
+					"response": []
+				}
+			],
+			"description": "Adjustment entities describe post-billing adjustments to billed or completed transactions."
+		},
+		{
+			"name": "Businesses",
+			"item": [
+				{
+					"name": "List businesses for a customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/businesses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"businesses"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "<string>",
+									"description": "Return entities that match a search query.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active,active",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Returns a paginated list of businesses for a customer. Use the query parameters to page through results.\n\nBy default, Paddle returns businesses that are `active`. Use the `status` query parameter to return businesses that are archived."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a business for a customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"<string>\",\n  \"company_number\": \"<string,null>\",\n  \"tax_identifier\": \"<string,null>\",\n  \"contacts\": [\n    {\n      \"email\": \"<email>\",\n      \"name\": \"<string>\"\n    }\n  ],\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/businesses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"businesses"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Creates a new business for a customer.\n\nIf successful, your response includes a copy of the new business entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a business for a customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/businesses/:business_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"businesses",
+								":business_id"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								},
+								{
+									"key": "business_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the business entity to work with."
+								}
+							]
+						},
+						"description": "Returns a business for a customer using its ID and related customer ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a business for a customer",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"<string>\",\n  \"company_number\": \"<string,null>\",\n  \"tax_identifier\": \"<string,null>\",\n  \"status\": \"<string>\",\n  \"contacts\": [\n    {\n      \"email\": \"<email>\",\n      \"name\": \"<string>\"\n    }\n  ],\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/businesses/:business_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"businesses",
+								":business_id"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								},
+								{
+									"key": "business_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the business entity to work with."
+								}
+							]
+						},
+						"description": "Updates a business for a customer using its ID and related customer ID.\n\nIf successful, your response includes a copy of the updated business entity."
+					},
+					"response": []
+				}
+			],
+			"description": "Business entities hold information about customer businesses. They're sub-entities of customers."
+		},
+		{
+			"name": "Customers",
+			"item": [
+				{
+					"name": "List credit balances for a customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/credit-balances",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"credit-balances"
+							],
+							"query": [
+								{
+									"key": "currency_code",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the currency code. Use a comma-separated list to specify multiple currency codes.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Returns a list of credit balances for each currency for a customer. Each balance has three totals:\n\n* `available`: total available to use.\n* `reserved`: total temporarily reserved for billed transactions.\n* `used`: total amount of credit used.\n\nCredit is added to the `available` total initially. When used, it moves to the `used` total.\n\nThe `reserved` total is used when a credit balance is applied to a transaction that's marked as `billed`, like when working with an issued invoice. It's not available for other transactions at this point, but isn't considered `used` until the transaction is completed. If a `billed` transaction is `canceled`, any reserved credit moves back to `available`.\n\nCredit balances are created automatically by Paddle when you take an action that results in Paddle creating a credit for a customer, like making prorated changes to a subscription. An empty `data` array is returned where a customer has no credit balances.\n\nThe response is not paginated."
+					},
+					"response": []
+				},
+				{
+					"name": "List customers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "email",
+									"value": "<string>,<string>",
+									"description": "Return entities that exactly match the specified email address. Use a comma-separated list to specify multiple email addresses. Recommended for precise matching of email addresses.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "<string>",
+									"description": "Return entities that match a search query.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active,active",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of customers. Use the query parameters to page through results.\n\nBy default, Paddle returns customers that are `active`. Use the `status` query parameter to return customers that are archived."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"<email>\",\n  \"name\": \"<string>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  },\n  \"locale\": \"en\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/customers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers"
+							]
+						},
+						"description": "Creates a new customer.\n\nIf successful, your response includes a copy of the new customer entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Returns a customer using its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a customer",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"<string>\",\n  \"email\": \"<email>\",\n  \"status\": \"<string>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  },\n  \"locale\": \"en\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Updates a customer using its ID.\n\nIf successful, your response includes a copy of the updated customer entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Generate an authentication token for a customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/auth-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"auth-token"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Generates an authentication token for a customer. You can pass a generated authentication token to Paddle.js when opening a checkout to let customers work with saved payment methods.\n\nAuthentication tokens are temporary and shouldn't be cached. They're valid until the `expires_at` date returned in the response."
+					},
+					"response": []
+				}
+			],
+			"description": "Customer entities hold information about the people and businesses that make purchases. They're related to addresses and businesses."
+		},
+		{
+			"name": "Discounts",
+			"item": [
+				{
+					"name": "List discounts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/discounts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"discounts"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "code",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the discount code. Use a comma-separated list to specify multiple discount codes.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active,active",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								},
+								{
+									"key": "mode",
+									"value": "<string>",
+									"description": "Return entities that match the specified mode.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of discounts. Use the query parameters to page through results.\n\nBy default, Paddle returns discounts that are `active`. Use the `status` query parameter to return discounts that are archived or expired."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a discount",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"<string>\",\n  \"type\": \"<string>\",\n  \"amount\": \"<string>\",\n  \"enabled_for_checkout\": true,\n  \"code\": \"<string>\",\n  \"mode\": \"standard\",\n  \"currency_code\": \"<string>\",\n  \"recur\": false,\n  \"maximum_recurring_intervals\": \"<integer,null>\",\n  \"usage_limit\": \"<integer,null>\",\n  \"restrict_to\": [\n    \"<string>\"\n  ],\n  \"expires_at\": \"<dateTime>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/discounts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"discounts"
+							]
+						},
+						"description": "Creates a new discount.\n\nIf successful, your response includes a copy of the new discount entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a discount",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/discounts/:discount_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"discounts",
+								":discount_id"
+							],
+							"variable": [
+								{
+									"key": "discount_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the discount entity to work with."
+								}
+							]
+						},
+						"description": "Returns a discount using its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a discount",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"active\",\n  \"description\": \"<string>\",\n  \"enabled_for_checkout\": true,\n  \"code\": \"<string>\",\n  \"type\": \"<string>\",\n  \"mode\": \"standard\",\n  \"amount\": \"<string>\",\n  \"currency_code\": \"<string>\",\n  \"recur\": false,\n  \"maximum_recurring_intervals\": \"<integer,null>\",\n  \"usage_limit\": \"<integer,null>\",\n  \"restrict_to\": [\n    \"<string>\"\n  ],\n  \"expires_at\": \"<dateTime>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/discounts/:discount_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"discounts",
+								":discount_id"
+							],
+							"variable": [
+								{
+									"key": "discount_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the discount entity to work with."
+								}
+							]
+						},
+						"description": "Updates a discount using its ID.\n\nIf successful, your response includes a copy of the updated discount entity.\n\nTo update a checkout recovery discount, configure your checkout recovery settings in the dashboard."
+					},
+					"response": []
+				}
+			],
+			"description": "Discount entities describe percentage or amount-based discounts for transactions. They're sometimes called coupons or promo codes."
+		},
+		{
+			"name": "Event types",
+			"item": [
+				{
+					"name": "List events types",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/event-types",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"event-types"
+							]
+						},
+						"description": "Returns a list of event types.\n\nThe response is not paginated."
+					},
+					"response": []
+				}
+			],
+			"description": "Event types are actions that Paddle creates events for."
+		},
+		{
+			"name": "Events",
+			"item": [
+				{
+					"name": "List events",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"events"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of events that have occurred in the last 90 days. Use the query parameters to page through results.\n\nEvents older than 90 days aren't retained.\n\nThis is sometimes referred to as \"the event stream.\""
+					},
+					"response": []
+				}
+			],
+			"description": "Event entities describe something notable that happened in your Paddle system."
+		},
+		{
+			"name": "IP addresses",
+			"item": [
+				{
+					"name": "Get Paddle IP addresses",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/ips",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"ips"
+							]
+						},
+						"description": "Returns Paddle IP addresses. You can add these IP addresses to your allowlist.\n\nIP addresses returned are for the environment that you're making the request in. For example, making the request to the production base URL returns all production IP addresses."
+					},
+					"response": []
+				}
+			],
+			"description": "Get Paddle IP addresses."
+		},
+		{
+			"name": "Notification logs",
+			"item": [
+				{
+					"name": "List logs for a notification",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/notifications/:notification_id/logs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications",
+								":notification_id",
+								"logs"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "notification_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the notification entity to work with."
+								}
+							]
+						},
+						"description": "Returns a paginated list of notification logs for a notification. A log includes information about delivery attempts, including failures.\n\nNotifications older than 90 days aren't retained. If you try to list logs for a notification that's no longer retained, Paddle returns an error."
+					},
+					"response": []
+				}
+			],
+			"description": "Notification logs are records of an attempt to deliver a notification."
+		},
+		{
+			"name": "Notification settings",
+			"item": [
+				{
+					"name": "List notification settings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/notification-settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification-settings"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "200",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `200`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "active",
+									"value": "<boolean>",
+									"description": "Determine whether returned entities are active (`true`) or not (`false`).",
+									"disabled": true
+								},
+								{
+									"key": "traffic_source",
+									"value": "<string>",
+									"description": "Return entities that match the specified traffic source.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of notification settings (notification destinations)."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a notification setting",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"<string>\",\n  \"description\": \"<string>\",\n  \"destination\": \"<string>\",\n  \"subscribed_events\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"api_version\": \"<integer>\",\n  \"include_sensitive_fields\": false,\n  \"traffic_source\": \"platform\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notification-settings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification-settings"
+							]
+						},
+						"description": "Creates a new notification setting (notification destination).\n\nPass an array of event type names to `subscribed_events` to say which events you'd like to subscribe to. Paddle responds with the full event type object for each event type.\n\nIf successful, your response includes a copy of the new notification setting entity. Use the returned `endpoint_secret_key` for webhook signature verification."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a notification setting",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/notification-settings/:notification_setting_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification-settings",
+								":notification_setting_id"
+							],
+							"variable": [
+								{
+									"key": "notification_setting_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the notification setting entity (notification destination) to work with."
+								}
+							]
+						},
+						"description": "Returns a notification setting (notification destination) using its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a notification setting",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"<string>\",\n  \"destination\": \"<string>\",\n  \"active\": true,\n  \"api_version\": \"<integer>\",\n  \"include_sensitive_fields\": false,\n  \"subscribed_events\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"traffic_source\": \"<string>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notification-settings/:notification_setting_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification-settings",
+								":notification_setting_id"
+							],
+							"variable": [
+								{
+									"key": "notification_setting_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the notification setting entity (notification destination) to work with."
+								}
+							]
+						},
+						"description": "Updates a notification setting (notification destination) using its ID.\n\nWhen updating subscribed events, send the complete list of event types that you'd like to subscribe to — including existing event types. If you omit event types, they're removed from the notification setting.\n\nYou only need to pass an event type name. Paddle responds with the full event type object for each event type.\n\nIf successful, your response includes a copy of the updated notification setting entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a notification setting",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/notification-settings/:notification_setting_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notification-settings",
+								":notification_setting_id"
+							],
+							"variable": [
+								{
+									"key": "notification_setting_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the notification setting entity (notification destination) to work with."
+								}
+							]
+						},
+						"description": "Deletes a notification setting (notification destination) using its ID.\n\nWhen you delete a notification setting, it's permanently removed from your account. Paddle stops sending events to your destination, and you'll lose access to all the logs for this notification setting.\n\nThere's no way to recover a deleted notification setting. Deactivate a notification setting using the update notification setting operation if you'll need access to the logs or want to reactivate later on."
+					},
+					"response": []
+				}
+			],
+			"description": "Notification settings entities describe subscriptions to events. They're also called notification destinations."
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "List notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/notifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "notification_setting_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified notification destination. Use a comma-separated list to specify multiple notification destination IDs.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "search",
+									"value": "<string>",
+									"description": "Return entities that match a search query.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								},
+								{
+									"key": "filter",
+									"value": "<string>",
+									"description": "Return entities that contain the Paddle ID specified. Pass a transaction, customer, or subscription ID.",
+									"disabled": true
+								},
+								{
+									"key": "to",
+									"value": "<string>",
+									"description": "Return entities up to a specific time. Pass an RFC 3339 datetime string.",
+									"disabled": true
+								},
+								{
+									"key": "from",
+									"value": "<string>",
+									"description": "Return entities from a specific time. Pass an RFC 3339 datetime string.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of notifications created in the last 90 days. Use the query parameters to page through results.\n\nNotifications older than 90 days aren't retained."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a notification",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/notifications/:notification_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications",
+								":notification_id"
+							],
+							"variable": [
+								{
+									"key": "notification_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the notification entity to work with."
+								}
+							]
+						},
+						"description": "Returns a notification using its ID.\n\nNotifications older than 90 days aren't retained. If you try to get a notification that's no longer retained, Paddle returns an error."
+					},
+					"response": []
+				},
+				{
+					"name": "Replay a notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/notifications/:notification_id/replay",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"notifications",
+								":notification_id",
+								"replay"
+							],
+							"variable": [
+								{
+									"key": "notification_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the notification entity to work with."
+								}
+							]
+						},
+						"description": "Attempts to resend a `delivered` or `failed` notification using its ID.\n\nPaddle creates a new notification entity for the replay, related to the same `event_id`. Your response includes the new `notification_id` of the created notification.\n\nNotifications older than 90 days aren't retained. If you try to replay a notification that's no longer retained, Paddle returns an error.\n\nOnly notifications with the `origin` of `event` can be replayed. You can't replay a notification created for a replay."
+					},
+					"response": []
+				}
+			],
+			"description": "Notification entities describe a notification for an event that happened in your Paddle system."
+		},
+		{
+			"name": "Prices",
+			"item": [
+				{
+					"name": "List prices",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/prices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"prices"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "include",
+									"value": "<string>",
+									"description": "Include related entities in the response.",
+									"disabled": true
+								},
+								{
+									"key": "include",
+									"value": "<string>",
+									"description": "Include related entities in the response.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "product_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified product. Use a comma-separated list to specify multiple product IDs.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active,active",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								},
+								{
+									"key": "recurring",
+									"value": "<boolean>",
+									"description": "Determine whether returned entities are for recurring prices (`true`) or one-time prices (`false`).",
+									"disabled": true
+								},
+								{
+									"key": "type",
+									"value": "<string>",
+									"description": "Return items that match the specified type.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of prices. Use the query parameters to page through results.\n\nBy default, Paddle returns prices that are `active`. Use the `status` query parameter to return prices that are archived.\n\nUse the `include` parameter to include the related product entity in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a price",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"<string>\",\n  \"product_id\": \"<string>\",\n  \"unit_price\": {\n    \"amount\": \"<string>\",\n    \"currency_code\": \"<string>\"\n  },\n  \"type\": \"standard\",\n  \"name\": \"<string,null>\",\n  \"billing_cycle\": {\n    \"interval\": \"<string>\",\n    \"frequency\": \"<integer>\"\n  },\n  \"trial_period\": {\n    \"interval\": \"<string>\",\n    \"frequency\": \"<integer>\"\n  },\n  \"tax_mode\": \"account_setting\",\n  \"unit_price_overrides\": [\n    {\n      \"country_codes\": [\n        \"<string>\"\n      ],\n      \"unit_price\": {\n        \"amount\": \"<string>\",\n        \"currency_code\": \"<string>\"\n      }\n    },\n    {\n      \"country_codes\": [\n        \"<string>\"\n      ],\n      \"unit_price\": {\n        \"amount\": \"<string>\",\n        \"currency_code\": \"<string>\"\n      }\n    }\n  ],\n  \"quantity\": {\n    \"minimum\": 1,\n    \"maximum\": 100\n  },\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/prices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"prices"
+							]
+						},
+						"description": "Creates a new price.\n\nPrices describe how you charge for products. You must include a `product_id` in your request to relate this price to a product.\n\nIf you omit the `quantity` object, Paddle automatically sets a minimum of `1` and a maximum of `100` for you. This means the most units that a customer can buy is 100. Set a quantity if you'd like to offer a different amount.\n\nIf successful, your response includes a copy of the new price entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a price",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/prices/:price_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"prices",
+								":price_id"
+							],
+							"query": [
+								{
+									"key": "include",
+									"value": "<string>",
+									"description": "Include related entities in the response.",
+									"disabled": true
+								},
+								{
+									"key": "include",
+									"value": "<string>",
+									"description": "Include related entities in the response.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "price_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the price entity to work with."
+								}
+							]
+						},
+						"description": "Returns a price using its ID.\n\nUse the `include` parameter to include the related product entity in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a price",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"<string>\",\n  \"type\": \"standard\",\n  \"name\": \"<string,null>\",\n  \"billing_cycle\": {\n    \"interval\": \"<string>\",\n    \"frequency\": \"<integer>\"\n  },\n  \"trial_period\": {\n    \"interval\": \"<string>\",\n    \"frequency\": \"<integer>\"\n  },\n  \"tax_mode\": \"account_setting\",\n  \"unit_price\": {\n    \"amount\": \"<string>\",\n    \"currency_code\": \"<string>\"\n  },\n  \"unit_price_overrides\": [\n    {\n      \"country_codes\": [\n        \"<string>\"\n      ],\n      \"unit_price\": {\n        \"amount\": \"<string>\",\n        \"currency_code\": \"<string>\"\n      }\n    },\n    {\n      \"country_codes\": [\n        \"<string>\"\n      ],\n      \"unit_price\": {\n        \"amount\": \"<string>\",\n        \"currency_code\": \"<string>\"\n      }\n    }\n  ],\n  \"quantity\": {\n    \"minimum\": 1,\n    \"maximum\": 100\n  },\n  \"status\": \"<string>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/prices/:price_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"prices",
+								":price_id"
+							],
+							"variable": [
+								{
+									"key": "price_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the price entity to work with."
+								}
+							]
+						},
+						"description": "Updates a price using its ID.\n\nIf successful, your response includes a copy of the updated price entity."
+					},
+					"response": []
+				}
+			],
+			"description": "Price entities describe how much and how often you charge for your products. They hold charging information."
+		},
+		{
+			"name": "Pricing preview",
+			"item": [
+				{
+					"name": "Preview prices",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"quantity\": \"<integer>\",\n      \"price_id\": \"<string>\"\n    }\n  ],\n  \"customer_id\": \"<string>\",\n  \"address_id\": \"<string>\",\n  \"business_id\": \"<string>\",\n  \"currency_code\": \"<string>\",\n  \"discount_id\": \"<string>\",\n  \"address\": {\n    \"country_code\": \"<string>\",\n    \"postal_code\": \"<string,null>\"\n  },\n  \"customer_ip_address\": \"<string,null>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/pricing-preview",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"pricing-preview"
+							]
+						},
+						"description": "Previews calculations for one or more prices. Typically used for building pricing pages.\n\nYou can provide location information when previewing prices. You must provide this if you want Paddle to calculate tax or [automatically localize prices](https://developer.paddle.com/build/products/offer-localized-pricing). You can provide one of:\n\n* `customer_ip_address`: Paddle fetches location using the IP address to calculate totals.\n* `address`: Paddle uses the country and ZIP code (where supplied) to calculate totals.\n* `customer_id`, `address_id`, `business_id`: Paddle uses existing customer data to calculate totals. Typically used for logged-in customers.\n\nIf successful, your response includes the data you sent with a `details` object that includes totals for the supplied prices.\n\nEach line item includes `formatted_unit_totals` and `formatted_totals` objects that return totals formatted for the country or region you're working with, including the currency symbol.\n\nYou can work with the preview prices operation using the [`Paddle.PricePreview()`](https://developer.paddle.com/paddlejs/methods/paddle-pricepreview) method in Paddle.js. When working with `Paddle.PricePreview()`, request and response fields are `camelCase` rather than `snake_case`."
+					},
+					"response": []
+				}
+			],
+			"description": "Pricing previews are calculated totals for prices."
+		},
+		{
+			"name": "Products",
+			"item": [
+				{
+					"name": "List products",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "include",
+									"value": "<string>,<string>",
+									"description": "Include related entities in the response. Use a comma-separated list to specify multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active,active",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								},
+								{
+									"key": "tax_category",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the specified tax category. Use a comma-separated list to specify multiple tax categories.",
+									"disabled": true
+								},
+								{
+									"key": "type",
+									"value": "<string>",
+									"description": "Return items that match the specified type.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of products. Use the query parameters to page through results.\n\nBy default, Paddle returns products that are `active`. Use the `status` query parameter to return products that are archived.\n\nUse the `include` parameter to include related price entities in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"<string>\",\n  \"tax_category\": \"<string>\",\n  \"description\": \"<string,null>\",\n  \"type\": \"standard\",\n  \"image_url\": \"<uri>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/products",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products"
+							]
+						},
+						"description": "Creates a new product.\n\nPaddle does not upload product images to a CDN. For `image_url`, you should host images on an HTTPS server that's publicly accessible. We recommend using square images (`1:1` ratio).\n\nIf successful, your response includes a copy of the new product entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a product",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/products/:product_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products",
+								":product_id"
+							],
+							"query": [
+								{
+									"key": "include",
+									"value": "<string>,<string>",
+									"description": "Include related entities in the response. Use a comma-separated list to specify multiple entities.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "product_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the product entity to work with."
+								}
+							]
+						},
+						"description": "Returns a product using its ID.\n\nUse the `include` parameter to include related price entities in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a product",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"<string>\",\n  \"description\": \"<string,null>\",\n  \"type\": \"standard\",\n  \"tax_category\": \"<string>\",\n  \"image_url\": \"<null>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  },\n  \"status\": \"<string>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/products/:product_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"products",
+								":product_id"
+							],
+							"variable": [
+								{
+									"key": "product_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the product entity to work with."
+								}
+							]
+						},
+						"description": "Updates a product using its ID.\n\nPaddle does not upload product images to a CDN. For `image_url`, you should host images on an HTTPS server that's publicly accessible. We recommend using square images (`1:1` ratio).\n\nIf successful, your response includes a copy of the updated product entity."
+					},
+					"response": []
+				}
+			],
+			"description": "Product entities describe the items that customers can purchase. They hold high-level product attributes."
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Create a report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<object>",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/reports",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reports"
+							]
+						},
+						"description": "Creates a new report.\n\nReports are created as `pending` initially while Paddle generates your report. They move to `ready` when they're ready to download.\n\nYou can download a report when it's ready using the [get a CSV file for a report operation](https://developer.paddle.com/api-reference/reports/get-report-csv).\n\nIf successful, your response includes a copy of the new report entity."
+					},
+					"response": []
+				},
+				{
+					"name": "List reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reports"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of reports. Use the query parameters to page through results.\n\nBy default, Paddle returns reports that are `pending` or `ready`. Use the `status` query parameter to return reports that are `failed`, `expired`, or `deleted`."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a CSV file for a report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/:report_id/download-url",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reports",
+								":report_id",
+								"download-url"
+							],
+							"variable": [
+								{
+									"key": "report_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the report entity."
+								}
+							]
+						},
+						"description": "Returns a link to a CSV file for a report.\n\nOnly returned for reports that are `ready`. This means Paddle has completed processing the report and it's ready to download.\n\nThe link returned is not a permanent link. It expires after 3 minutes."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/:report_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"reports",
+								":report_id"
+							],
+							"variable": [
+								{
+									"key": "report_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the report entity."
+								}
+							]
+						},
+						"description": "Returns a report using its ID."
+					},
+					"response": []
+				}
+			],
+			"description": "Report entities describe a report generated in your Paddle system."
+		},
+		{
+			"name": "Subscriptions",
+			"item": [
+				{
+					"name": "Get a subscription",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id"
+							],
+							"query": [
+								{
+									"key": "include",
+									"value": "<string>,<string>",
+									"description": "Include related entities in the response. Use a comma-separated list to specify multiple entities.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Returns a subscription using its ID.\n\nUse the `include` parameter to include transaction information in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a subscription",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_id\": \"<string>\",\n  \"address_id\": \"<string>\",\n  \"business_id\": \"<string>\",\n  \"currency_code\": \"<string>\",\n  \"next_billed_at\": \"<dateTime>\",\n  \"discount\": {\n    \"id\": \"<string>\",\n    \"effective_from\": \"<string>\"\n  },\n  \"collection_mode\": \"automatic\",\n  \"billing_details\": {\n    \"enable_checkout\": false,\n    \"purchase_order_number\": \"<string>\",\n    \"additional_information\": \"<string,null>\",\n    \"payment_terms\": {\n      \"interval\": \"<string>\",\n      \"frequency\": \"<integer>\"\n    }\n  },\n  \"scheduled_change\": \"<null>\",\n  \"items\": [\n    {\n      \"price_id\": \"<string>\",\n      \"quantity\": \"<number>\"\n    }\n  ],\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  },\n  \"proration_billing_mode\": \"<string>\",\n  \"on_payment_failure\": \"prevent_change\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Updates a subscription using its ID.\n\nWhen making changes to items or the next billing date for a subscription, you must include the `proration_billing_mode` field to tell Paddle how to bill for those changes.\n\nSend the complete list of items that you'd like to be on a subscription — including existing items. If you omit items, they're removed from the subscription.\n\nFor each item, send `price_id` and `quantity`. Paddle responds with the full price object for each price. If you're updating an existing item, you can omit the `quantity` if you don't want to update it.\n\nIf successful, your response includes a copy of the updated subscription entity. When an update results in an immediate charge, responses may take longer than usual while a payment attempt is processed."
+					},
+					"response": []
+				},
+				{
+					"name": "List subscriptions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions"
+							],
+							"query": [
+								{
+									"key": "address_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified address. Use a comma-separated list to specify multiple address IDs.",
+									"disabled": true
+								},
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "collection_mode",
+									"value": "<string>",
+									"description": "Return entities that match the specified collection mode.",
+									"disabled": true
+								},
+								{
+									"key": "customer_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified customer. Use a comma-separated list to specify multiple customer IDs.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "price_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified price. Use a comma-separated list to specify multiple price IDs.",
+									"disabled": true
+								},
+								{
+									"key": "scheduled_change_action",
+									"value": "<string>,<string>",
+									"description": "Return subscriptions that have a scheduled change. Use a comma-separated list to specify multiple scheduled change actions.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of subscriptions. Use the query parameters to page through results."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel a subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"effective_from\": \"next_billing_period\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id/cancel",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id",
+								"cancel"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Cancels a subscription using its ID.\n\nBy default, active subscriptions are canceled at the end of the billing period. When you send a request to cancel, Paddle creates a `scheduled_change` against the subscription entity to say that it should cancel at the end of the current billing period. Its `status` remains `active` until after the effective date of the scheduled change, at which point it changes to `canceled`.\n\nYou can cancel a subscription right away by including `effective_from` in your request, setting the value to `immediately`. If successful, your response includes a copy of the updated subscription entity with the `status` of `canceled`. Canceling immediately is the default behavior for paused subscriptions.\n\nYou can't reinstate a canceled subscription."
+					},
+					"response": []
+				},
+				{
+					"name": "Pause a subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"effective_from\": \"next_billing_period\",\n  \"resume_at\": \"<dateTime>\",\n  \"on_resume\": \"start_new_billing_period\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id/pause",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id",
+								"pause"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Pauses a subscription using its ID.\n\nBy default, subscriptions are paused at the end of the billing period. When you send a request to pause, Paddle creates a `scheduled_change` against the subscription entity to say that it should pause at the end of the current billing period. Its `status` remains `active` until after the effective date of the scheduled change, at which point it changes to `paused`.\n\nYou can pause a subscription right away by including `effective_from` in your request, setting the value to `immediately`. If successful, your response includes a copy of the updated subscription entity with the `status` of `paused`.\n\nTo set a resume date, include the `resume_at` field in your request. The subscription remains paused until the resume date, or until you send a resume request. Omit to create an open-ended pause. The subscription remains paused indefinitely, until you send a resume request."
+					},
+					"response": []
+				},
+				{
+					"name": "Resume a paused subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"effective_from\": \"<dateTime>\",\n  \"on_resume\": \"start_new_billing_period\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id/resume",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id",
+								"resume"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Resumes a paused subscription using its ID. Only `paused` subscriptions can be resumed. If an `active` subscription has a scheduled change to pause in the future, use this operation to set or change the resume date.\n\nYou can't resume a `canceled` subscription.\n\nOn resume, Paddle bills for a subscription immediately by default. Subscription billing dates are recalculated based on the resume date. Use the `on_resume` field to change this behavior.\n\nIf successful, Paddle returns a copy of the updated subscription entity:\n\n* When resuming a `paused` subscription immediately, the subscription status is `active`, and billing dates are updated to reflect the resume date.\n* When scheduling a `paused` subscription to resume on a date in the future, the subscription status is `paused`, and `scheduled_change.resume_at` is updated to reflect the scheduled resume date.\n* When changing the resume date for an `active` subscription that's scheduled to pause, the subscription status is `active` and `scheduled_change.resume_at` is updated to reflect the scheduled resume date.\n\nThis operation may result in an immediate charge, so responses may take longer than usual while a payment attempt is processed."
+					},
+					"response": []
+				},
+				{
+					"name": "Activate a trialing subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id/activate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id",
+								"activate"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Activates a trialing subscription using its ID. Only automatically-collected subscriptions where the status is `trialing` can be activated.\n\nOn activation, Paddle bills for a subscription immediately. Subscription billing dates are recalculated based on the activation date (the time the activation request is made).\n\nIf successful, Paddle returns a copy of the updated subscription entity. The subscription status is `active`, and billing dates are updated to reflect the activation date.\n\nThis operation results in an immediate charge, so responses may take longer than usual while a payment attempt is processed."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a transaction to update payment method",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id/update-payment-method-transaction",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id",
+								"update-payment-method-transaction"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Returns a transaction that you can pass to a checkout to let customers update their payment details. Only for subscriptions where `collection_mode` is `automatic`.\n\nThe transaction returned depends on the status of the related subscription:\n\n* Where a subscription is `past_due`, it returns the most recent `past_due` transaction.\n* Where a subscription is `active`, it creates a new zero amount transaction for the items on a subscription.\n\nYou can use the returned `checkout.url`, or pass the returned transaction ID to Paddle.js to open a checkout to present customers with a way of updating their payment details.\n\nThe `customer`, `address`, `business`, `discount`, `adjustments` and `adjustments_totals` properties are only returned in the response if the API key has read permissions for those related entities."
+					},
+					"response": []
+				},
+				{
+					"name": "Preview an update to a subscription",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_id\": \"<string>\",\n  \"address_id\": \"<string>\",\n  \"business_id\": \"<string>\",\n  \"currency_code\": \"<string>\",\n  \"next_billed_at\": \"<dateTime>\",\n  \"discount\": {\n    \"id\": \"<string>\",\n    \"effective_from\": \"<string>\"\n  },\n  \"collection_mode\": \"automatic\",\n  \"billing_details\": {\n    \"enable_checkout\": false,\n    \"purchase_order_number\": \"<string>\",\n    \"additional_information\": \"<string,null>\",\n    \"payment_terms\": {\n      \"interval\": \"<string>\",\n      \"frequency\": \"<integer>\"\n    }\n  },\n  \"scheduled_change\": \"<null>\",\n  \"items\": [\n    {\n      \"price_id\": \"<string>\",\n      \"quantity\": \"<number>\"\n    }\n  ],\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  },\n  \"proration_billing_mode\": \"<string>\",\n  \"on_payment_failure\": \"prevent_change\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id/preview",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id",
+								"preview"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Previews an update for a subscription without applying those changes. Typically used for previewing proration before making changes to a subscription.\n\nIf successful, your response includes `immediate_transaction`, `next_transaction`, and `recurring_transaction_details` so you can see expected transactions for the changes.\n\nThe `update_summary` object contains details of prorated credits and charges created, along with the overall result of the update."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a one-time charge for a subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"effective_from\": \"<string>\",\n  \"items\": [\n    {\n      \"quantity\": \"<integer>\",\n      \"price_id\": \"<string>\"\n    }\n  ],\n  \"on_payment_failure\": \"prevent_change\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id/charge",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id",
+								"charge"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Creates a new one-time charge for a subscription. Use to bill non-recurring items to a subscription. Non-recurring items are price entities where the `billing_cycle` is `null`.\n\nIf successful, Paddle responds with the updated subscription entity. However, one-time charges aren't held against the subscription entity, so the charges billed aren't returned in the response.\n\nOnce created, to get details of a one-time charge:\n\n* When created with `effective_from` as `next_billing_period`, get the subscription the charge was billed to and use the `include` query parameter with the `next_transaction` value.\n* When created with `effective_from` as `immediately`, list transactions and use the `subscription_id` query parameter with the subscription ID of the subscription the charge was billed to.\n\nWhen an update results in an immediate charge, responses may take longer than usual while a payment attempt is processed."
+					},
+					"response": []
+				},
+				{
+					"name": "Preview a one-time charge for a subscription",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"effective_from\": \"<string>\",\n  \"items\": [\n    {\n      \"quantity\": \"<integer>\",\n      \"price_id\": \"<string>\"\n    }\n  ],\n  \"on_payment_failure\": \"prevent_change\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscriptions/:subscription_id/charge/preview",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"subscriptions",
+								":subscription_id",
+								"charge",
+								"preview"
+							],
+							"variable": [
+								{
+									"key": "subscription_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the subscription entity to work with."
+								}
+							]
+						},
+						"description": "Previews creating a one-time charge for a subscription without billing that charge. Typically used for previewing calculations before making changes to a subscription.\n\nOne-time charges are non-recurring items. These are price entities where the `billing_cycle` is `null`.\n\nIf successful, your response includes `immediate_transaction`, `next_transaction`, and `recurring_transaction_details` so you can see expected transactions for the changes."
+					},
+					"response": []
+				}
+			],
+			"description": "Subscription entities describe a recurring billing relationship with a customer. They're closely related to transactions."
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "List transactions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/transactions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "billed_at",
+									"value": "<string>",
+									"description": "Return entities billed at a specific time. Pass an RFC 3339 datetime string, or use `[LT]` (less than), `[LTE]` (less than or equal to), `[GT]` (greater than), or `[GTE]` (greater than or equal to) operators. For example, `billed_at=2023-04-18T17:03:26` or `billed_at[LT]=2023-04-18T17:03:26`.",
+									"disabled": true
+								},
+								{
+									"key": "collection_mode",
+									"value": "<string>",
+									"description": "Return entities that match the specified collection mode.",
+									"disabled": true
+								},
+								{
+									"key": "created_at",
+									"value": "<string>",
+									"description": "Return entities created at a specific time. Pass an RFC 3339 datetime string, or use `[LT]` (less than), `[LTE]` (less than or equal to), `[GT]` (greater than), or `[GTE]` (greater than or equal to) operators. For example, `created_at=2023-04-18T17:03:26` or `created_at[LT]=2023-04-18T17:03:26`.",
+									"disabled": true
+								},
+								{
+									"key": "customer_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified customer. Use a comma-separated list to specify multiple customer IDs.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "include",
+									"value": "<string>,<string>",
+									"description": "Include related entities in the response. Use a comma-separated list to specify multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "invoice_number",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the invoice number. Use a comma-separated list to specify multiple invoice numbers.",
+									"disabled": true
+								},
+								{
+									"key": "origin",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified origin. Use a comma-separated list to specify multiple origins.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "<string>,<string>",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								},
+								{
+									"key": "subscription_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified subscription. Use a comma-separated list to specify multiple subscription IDs. Pass `null` to return entities that aren't related to any subscription.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "30",
+									"description": "Set how many entities are returned per page.",
+									"disabled": true
+								},
+								{
+									"key": "updated_at",
+									"value": "<string>",
+									"description": "Return entities updated at a specific time. Pass an RFC 3339 datetime string, or use `[LT]` (less than), `[LTE]` (less than or equal to), `[GT]` (greater than), or `[GTE]` (greater than or equal to) operators. For example, `updated_at=2023-04-18T17:03:26` or `updated_at[LT]=2023-04-18T17:03:26`.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of transactions. Use the query parameters to page through results.\n\nUse the `include` parameter to include related entities in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"price_id\": \"<string>\",\n      \"quantity\": \"<integer>\"\n    }\n  ],\n  \"status\": \"<string>\",\n  \"customer_id\": \"<string>\",\n  \"address_id\": \"<string>\",\n  \"business_id\": \"<string>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  },\n  \"currency_code\": \"<string>\",\n  \"collection_mode\": \"automatic\",\n  \"discount_id\": \"<string>\",\n  \"billing_details\": {\n    \"payment_terms\": {\n      \"interval\": \"<string>\",\n      \"frequency\": \"<integer>\"\n    },\n    \"enable_checkout\": false,\n    \"purchase_order_number\": \"<string>\",\n    \"additional_information\": \"<string,null>\"\n  },\n  \"billing_period\": {\n    \"starts_at\": \"<dateTime>\",\n    \"ends_at\": \"<dateTime>\"\n  },\n  \"checkout\": {\n    \"url\": \"<string,null>\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/transactions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "include",
+									"value": "<string>,<string>",
+									"description": "Include related entities in the response. Use a comma-separated list to specify multiple entities.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Creates a new transaction.\n\nTransactions are typically created with the status of `draft` or `ready` initially:\n\n* Draft transactions have `items` against them, but don't have all of the required fields for billing. Paddle creates draft transactions automatically when a checkout is opened.\n* Paddle automatically marks transactions as `ready` when all of the required fields are present for billing. This includes `customer_id` and `address_id` for automatically-collected transactions, and `billing_details` for manually-collected transactions.\n\nThe `collection_mode` against a transaction determines how Paddle tries to collect for payment:\n\n* Manually-collected transactions are for sales-assisted billing. Paddle sends an invoice to your customer when a transaction is `billed`. Payment is often by wire transfer.\n* Automatically-collected transactions are for self-serve checkouts. You may pass the transaction to a checkout or use the returned `checkout.url` to collect for payment.\n\nWhen a manually-collected transaction is marked as `billed` or an automatically-collected transaction is `completed`, Paddle automatically creates a related subscription for the items on the transaction.\n\nIf successful, your response includes a copy of the new transaction entity.\n\nUse the `include` parameter to include related entities in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Preview a transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"items\": [\n    {\n      \"price_id\": \"<string>\",\n      \"quantity\": \"<integer>\",\n      \"include_in_totals\": true\n    },\n    {\n      \"price_id\": \"<string>\",\n      \"quantity\": \"<integer>\",\n      \"include_in_totals\": true\n    }\n  ],\n  \"customer_id\": \"<string>\",\n  \"currency_code\": \"<string>\",\n  \"discount_id\": \"<string>\",\n  \"ignore_trials\": false\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/transactions/preview",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"transactions",
+								"preview"
+							]
+						},
+						"description": "Previews a transaction without creating a transaction entity. Typically used for creating more advanced, dynamic pricing pages where users can build their own plans.\n\nConsider using [the preview prices operation](https://developer.paddle.com/api-reference/pricing-preview/preview-prices) for simpler pricing pages.\n\nYou can provide location information when previewing a transaction. You must provide this if you want Paddle to calculate tax or [automatically localize prices](https://developer.paddle.com/build/products/offer-localized-pricing). You can provide one of:\n\n* `customer_ip_address`: Paddle fetches location using the IP address to calculate totals.\n* `address`: Paddle uses the country and ZIP code (where supplied) to calculate totals.\n* `customer_id`, `address_id`, `business_id`: Paddle uses existing customer data to calculate totals. Typically used for logged-in customers.\n\nWhen supplying items, you can exclude items from the total calculation using the `include_in_totals` boolean.\n\nBy default, recurring items with trials are considered to have a zero charge when previewing. Set `ignore_trials` to `true` to ignore trial periods against prices for transaction preview calculations.\n\nIf successful, your response includes the data you sent with a `details` object that includes totals for the supplied prices.\n\nTransaction previews don't create transactions, so no `id` is returned."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a transaction",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/transactions/:transaction_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"transactions",
+								":transaction_id"
+							],
+							"query": [
+								{
+									"key": "include",
+									"value": "<string>,<string>",
+									"description": "Include related entities in the response. Use a comma-separated list to specify multiple entities.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "transaction_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the transaction entity to work with."
+								}
+							]
+						},
+						"description": "Returns a transaction using its ID.\n\nUse the `include` parameter to include related entities in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a transaction",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"<string>\",\n  \"customer_id\": \"<string>\",\n  \"address_id\": \"<string>\",\n  \"business_id\": \"<string>\",\n  \"custom_data\": {\n  \"customer_reference_id\": \"abcd1234\"\n  },\n  \"currency_code\": \"<string>\",\n  \"origin\": \"<string>\",\n  \"collection_mode\": \"automatic\",\n  \"discount_id\": \"<string>\",\n  \"billing_details\": {\n    \"enable_checkout\": false,\n    \"purchase_order_number\": \"<string>\",\n    \"additional_information\": \"<string,null>\",\n    \"payment_terms\": {\n      \"interval\": \"<string>\",\n      \"frequency\": \"<integer>\"\n    }\n  },\n  \"billing_period\": {\n    \"starts_at\": \"<dateTime>\",\n    \"ends_at\": \"<dateTime>\"\n  },\n  \"items\": [\n    {\n      \"price_id\": \"<string>\",\n      \"quantity\": \"<integer>\"\n    }\n  ],\n  \"checkout\": {\n    \"url\": \"<string,null>\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/transactions/:transaction_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"transactions",
+								":transaction_id"
+							],
+							"query": [
+								{
+									"key": "include",
+									"value": "<string>,<string>",
+									"description": "Include related entities in the response. Use a comma-separated list to specify multiple entities.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "transaction_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the transaction entity to work with."
+								}
+							]
+						},
+						"description": "Updates a transaction using its ID.\n\nYou can update transactions that are `draft` or `ready`. `billed` and `completed` transactions are considered records for tax and legal purposes, so they can't be changed. You can either:\n\n* Create [an adjustment](https://developer.paddle.com/api-reference/adjustments/overview) to record a refund or credit for a transaction.\n* Cancel a `billed` transaction by sending a PATCH request to set `status` to `canceled`.\n\nThe transaction `status` may only be set to `billed` or `canceled`. Other statuses are set automatically by Paddle. Set a manually-collected transaction to `billed` to mark it as finalized. This is essentially issuing an invoice. At this point, it becomes a legal record so you can't make changes to it. Paddle automatically assigns an invoice number, creates [a related subscription](https://developer.paddle.com/api-reference/subscriptions/overview), and sends it to your customer.\n\nWhen making changes to items on a transaction, send the complete list of items that you'd like to be on a transaction — including existing items. For each item, send an object containing `price_id` and `quantity`. Paddle responds with the full `price` object for each item. See: [Work with lists](https://developer.paddle.com/api-reference/about/lists)\n\nIf successful, your response includes a copy of the updated transaction entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Revise customer information on a billed or completed transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer\": {\n    \"name\": \"<string>\"\n  },\n  \"business\": {\n    \"name\": \"<string>\",\n    \"tax_identifier\": \"<string>\"\n  },\n  \"address\": {\n    \"first_line\": \"<string>\",\n    \"second_line\": \"<string,null>\",\n    \"city\": \"<string>\",\n    \"region\": \"<string>\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/transactions/:transaction_id/revise",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"transactions",
+								":transaction_id",
+								"revise"
+							],
+							"variable": [
+								{
+									"key": "transaction_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the transaction entity to work with."
+								}
+							]
+						},
+						"description": "Revises customer information for a billed or completed transaction.\n\nRevise a transaction to rectify incorrect customer, address, or business information on invoice documents generated by Paddle.\n\nYou can revise transaction details that don't impact the tax rates on a transaction. This includes:\n\n* Customer name\n* Business name and tax or VAT number (`tax_identifier`)\n* Address details, apart from the country\n\nYou can't remove a valid tax or VAT number, only replace it with another valid one. If a valid tax or VAT number is added, Paddle automatically creates an adjustment to refund any tax where applicable.\n\nTransactions can only be revised once.\n\nIf successful, your response includes a copy of the transaction entity. [Get a transaction](https://developer.paddle.com/api-reference/transactions/get-transaction) using the `include` parameter with the `customer`, `address`, and `business` values to see the revised customer information.\n\nOnly the customer information for this transaction is updated. The related customer, address, and business entities aren't updated."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a PDF invoice for a transaction",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/transactions/:transaction_id/invoice",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"transactions",
+								":transaction_id",
+								"invoice"
+							],
+							"query": [
+								{
+									"key": "disposition",
+									"value": "attachment",
+									"description": "Determine whether the generated URL should download the PDF as an attachment saved locally, or open it inline in the browser.\n\nDefault: `attachment`.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "transaction_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the transaction entity to work with."
+								}
+							]
+						},
+						"description": "Returns a link to an invoice PDF for a transaction.\n\nInvoice PDFs are available for both automatically and manually-collected transactions:\n\n* The PDF for manually-collected transactions includes payment terms, purchase order number, and notes for your customer. It's a demand for payment from your customer. It's available for transactions that are `billed` or `completed`.\n* The PDF for automatically-collected transactions lets your customer know that payment was taken successfully. Customers may require this for for tax-reporting purposes. It's available for transactions that are `completed`.\n\nInvoice PDFs aren't available for zero-value transactions.\n\nThe link returned is not a permanent link. It expires after an hour."
+					},
+					"response": []
+				}
+			],
+			"description": "Transaction entities calculate and capture revenue. They hold information about an amount that you're billing for."
+		},
+		{
+			"name": "Payment methods",
+			"item": [
+				{
+					"name": "List payment methods for a customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/payment-methods",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"payment-methods"
+							],
+							"query": [
+								{
+									"key": "address_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified address. Use a comma-separated list to specify multiple address IDs.",
+									"disabled": true
+								},
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "supports_checkout",
+									"value": "<boolean>",
+									"description": "Return entities that support being presented at checkout (`true`) or not (`false`).",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Returns a paginated list of payment methods that a customer has saved.  Use the query parameters to page through results.\n\nWhen customers sign up for a subscription using Paddle Checkout, Paddle saves the payment method for renewals, upgrades and downgrades, and other charges related to that subscription.\n\nCustomers can also choose to save payment methods when purchasing one-time items by checking a box when completing checkout. You can present customers with their saved payment methods when they make a purchase in the future.\n\nReturns an empty list where customers have not saved any payment methods, or have deleted all previously saved payment methods."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a payment method for a customer",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/payment-methods/:payment_method_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"payment-methods",
+								":payment_method_id"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								},
+								{
+									"key": "payment_method_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the payment method entity to work with."
+								}
+							]
+						},
+						"description": "Returns a payment method for a customer using its ID and related customer ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a payment method for a customer",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/payment-methods/:payment_method_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"payment-methods",
+								":payment_method_id"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								},
+								{
+									"key": "payment_method_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the payment method entity to work with."
+								}
+							]
+						},
+						"description": "Deletes a customer payment method using its ID.\n\nWhen you delete a customer payment method, it's permanently removed from that customer.\n\nThere's no way to recover a deleted payment method."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Customer portal sessions",
+			"item": [
+				{
+					"name": "Create a customer portal session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"subscription_ids\": [\n    \"<string>\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/customers/:customer_id/portal-sessions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"customers",
+								":customer_id",
+								"portal-sessions"
+							],
+							"variable": [
+								{
+									"key": "customer_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the customer entity to work with."
+								}
+							]
+						},
+						"description": "Creates a customer portal session for a customer.\n\nThe [customer portal](https://developer.paddle.com/concepts/customer-portal) is a secure, Paddle-hosted site that allows\ncustomers to manage their own subscriptions, payments, and account information without you having to build custom billing screens.\n\nCustomers can:\n\n* View transaction history\n* Download invoices\n* Update payment methods\n* Manage their subscriptions including making changes or cancellations\n* Revise details on completed transactions\n\nYou can create a customer portal session to generate authenticated links for a customer\nso that they're automatically signed in to the portal. It's typically used when linking to\nthe customer portal from your app where customers are already authenticated.\n\nYou can include an array of `subscription_ids` to generate authenticated portal links that let customers make\nchanges to their subscriptions. You can use these links as part of subscription management workflows rather than\nbuilding your own billing screens.\n\nCustomer portal sessions are temporary and shouldn't be cached.\n\nThe customer portal is fully hosted by Paddle. For security and the best customer experience, don't embed the customer\nportal in an iframe."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Simulation types",
+			"item": [
+				{
+					"name": "List simulation types",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulation-types",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulation-types"
+							]
+						},
+						"description": "Returns a list of simulation types (events and scenarios) that you can choose from when creating simulations."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Simulations",
+			"item": [
+				{
+					"name": "List simulations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "notification_setting_id",
+									"value": "<string>,<string>",
+									"description": "Return entities related to the specified notification destination. Use a comma-separated list to specify multiple notification destination IDs.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "active,active",
+									"description": "Return entities that match the specified status. Use a comma-separated list to specify multiple status values.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Returns a paginated list of simulations. Use the query parameters to [page through results](https://developer.paddle.com/api-reference/about/pagination)."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a simulation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notification_setting_id\": \"<string>\",\n  \"type\": \"<string>\",\n  \"name\": \"<string>\",\n  \"payload\": \"<object>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/simulations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations"
+							]
+						},
+						"description": "Creates a new simulation for a notification setting (notification destination).\n\nFor scenario simulations, you can optionally include a `config.entities` object in the request body with entity IDs to populate\nsimulated webhook payloads with real data. The API key making the request needs read permissions:\n\n* For the entities you provided, or the request fails.\n* For related entities which aren't nested in the entities you provided, or static examples will be used instead.\n\nFor example, when creating a subscription renewal scenario simulation with an API key that has a `subscription.read` permission but not a `transaction.read` permission,\nthe request succeeds and the subscription data will be used in simulated payloads, but the related transaction data won't be used in payloads and falls back to a static example.\n\nIf you don't provide a `config.entities` object, simulated webhook payloads are populated with static examples.\n\nIf successful, your response includes a copy of the new simulation entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a simulation",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulations/:simulation_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations",
+								":simulation_id"
+							],
+							"variable": [
+								{
+									"key": "simulation_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation entity to work with."
+								}
+							]
+						},
+						"description": "Returns a simulation using its ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update a simulation",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"notification_setting_id\": \"<string>\",\n  \"name\": \"<string>\",\n  \"status\": \"<string>\",\n  \"type\": \"<string>\",\n  \"payload\": \"<object>\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/simulations/:simulation_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations",
+								":simulation_id"
+							],
+							"variable": [
+								{
+									"key": "simulation_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation entity to work with."
+								}
+							]
+						},
+						"description": "Updates a simulation using its ID.\n\nFor scenario simulations, you can optionally include a `config.entities` object in the request body with entity IDs to populate\nsimulated webhook payloads with real data. The API key making the request needs read permissions:\n\n* For the entities you provided, or the request fails.\n* For related entities which aren't nested in the entities you provided, or static examples will be used instead.\n\nFor example, when updating a subscription renewal scenario simulation with an API key that has a `subscription.read` permission but not a `transaction.read` permission,\nthe request succeeds and the subscription data will be used in simulated payloads, but the related transaction data won't be used in payloads and falls back to a static example.\n\nIf you don't provide a `config.entities` object, simulated webhook payloads are populated with static examples.\n\nIf successful, your response includes a copy of the updated simulation entity."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Simulation runs",
+			"item": [
+				{
+					"name": "List runs for a simulation",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulations/:simulation_id/runs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations",
+								":simulation_id",
+								"runs"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "include",
+									"value": "<string>",
+									"description": "Include related entities in the response.",
+									"disabled": true
+								},
+								{
+									"key": "include",
+									"value": "<string>",
+									"description": "Include related entities in the response.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "simulation_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation entity to work with."
+								}
+							]
+						},
+						"description": "Returns a paginated list of simulation runs. Use the query parameters to [page through results](https://developer.paddle.com/api-reference/about/pagination).\n\nUse the `include` parameter to [include related entities](https://developer.paddle.com/api-reference/about/include-entities) in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a run for a simulation",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulations/:simulation_id/runs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations",
+								":simulation_id",
+								"runs"
+							],
+							"variable": [
+								{
+									"key": "simulation_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation entity to work with."
+								}
+							]
+						},
+						"description": "Creates a new simulation run for a simulation.\n\nIf successful, your response includes a copy of the new simulation run entity."
+					},
+					"response": []
+				},
+				{
+					"name": "Get a run for a simulation",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulations/:simulation_id/runs/:simulation_run_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations",
+								":simulation_id",
+								"runs",
+								":simulation_run_id"
+							],
+							"query": [
+								{
+									"key": "include",
+									"value": "<string>",
+									"description": "Include related entities in the response.",
+									"disabled": true
+								},
+								{
+									"key": "include",
+									"value": "<string>",
+									"description": "Include related entities in the response.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "simulation_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation entity to work with."
+								},
+								{
+									"key": "simulation_run_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation run entity to work with."
+								}
+							]
+						},
+						"description": "Returns a simulation run using its ID.\n\nUse the `include` parameter to include related entities in the response."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Simulation run events",
+			"item": [
+				{
+					"name": "List events for a simulation run",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulations/:simulation_id/runs/:simulation_run_id/events",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations",
+								":simulation_id",
+								"runs",
+								":simulation_run_id",
+								"events"
+							],
+							"query": [
+								{
+									"key": "after",
+									"value": "<string>",
+									"description": "Return entities after the specified Paddle ID when working with paginated endpoints. Used in the `meta.pagination.next` URL in responses for list operations.",
+									"disabled": true
+								},
+								{
+									"key": "order_by",
+									"value": "id[DESC]",
+									"description": "Order returned entities by the specified field and direction (`[ASC]` or `[DESC]`). For example, `?order_by=id[ASC]`.\n\nValid fields for ordering: `id`.",
+									"disabled": true
+								},
+								{
+									"key": "per_page",
+									"value": "50",
+									"description": "Set how many entities are returned per page. Paddle returns the maximum number of results if a number greater than the maximum is requested. Check `meta.pagination.per_page` in the response to see how many were returned.\n\nDefault: `50`; Maximum: `200`.",
+									"disabled": true
+								},
+								{
+									"key": "id",
+									"value": "<string>,<string>",
+									"description": "Return only the IDs specified. Use a comma-separated list to get multiple entities.",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "simulation_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation entity to work with."
+								},
+								{
+									"key": "simulation_run_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation run entity to work with."
+								}
+							]
+						},
+						"description": "Returns a paginated list of simulations. Use the query parameters to [page through results](https://developer.paddle.com/api-reference/about/pagination)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get an event for a simulation run",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulations/:simulation_id/runs/:simulation_run_id/events/:simulation_event_id",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations",
+								":simulation_id",
+								"runs",
+								":simulation_run_id",
+								"events",
+								":simulation_event_id"
+							],
+							"variable": [
+								{
+									"key": "simulation_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation entity to work with."
+								},
+								{
+									"key": "simulation_run_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation run entity to work with."
+								},
+								{
+									"key": "simulation_event_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation event entity to work with."
+								}
+							]
+						},
+						"description": "Returns a simulation event using its ID.\n\nUse the `include` parameter to include related entities in the response."
+					},
+					"response": []
+				},
+				{
+					"name": "Replay an event for a simulation run",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/simulations/:simulation_id/runs/:simulation_run_id/events/:simulation_event_id/replay",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"simulations",
+								":simulation_id",
+								"runs",
+								":simulation_run_id",
+								"events",
+								":simulation_event_id",
+								"replay"
+							],
+							"variable": [
+								{
+									"key": "simulation_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation entity to work with."
+								},
+								{
+									"key": "simulation_run_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation run entity to work with."
+								},
+								{
+									"key": "simulation_event_id",
+									"value": "<string>",
+									"description": "(Required) Paddle ID of the simulation event entity to work with."
+								}
+							]
+						},
+						"description": "Attempts to resend a simulation run log using its ID.\n\nPaddle creates a new simulation run log entity for the replay, related to the same simulation run.\n\nIf successful, your response includes the new simulation run log entity."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{bearerToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://sandbox-api.paddle.com",
+			"type": "string"
+		},
+		{
+			"key": "bearerToken",
+			"value": "replace-me-with-actual-token",
+			"type": "string"
+		}
+	]
+}

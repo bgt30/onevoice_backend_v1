@@ -36,10 +36,11 @@ AWS_SECRET_ACCESS_KEY=your-aws-secret-key
 AWS_REGION=us-west-2
 S3_BUCKET_NAME=onevoice-videos
 
-# Stripe 설정 (결제 처리용)
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
-STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
-STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+# Paddle 설정 (결제 처리용)
+PADDLE_API_KEY=your_paddle_api_key
+PADDLE_ENVIRONMENT=sandbox
+PADDLE_WEBHOOK_SECRET=your_paddle_webhook_secret
+PADDLE_CLIENT_SIDE_TOKEN=your_paddle_client_side_token
 
 # ========================================
 # AI 서비스 API 키 (선택사항)

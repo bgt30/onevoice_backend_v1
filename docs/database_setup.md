@@ -26,7 +26,7 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/onevoice_db
 # API 키들 (선택사항, 나중에 설정 가능)
 OPENAI_API_KEY=your-openai-api-key
 ELEVENLABS_API_KEY=your-elevenlabs-api-key
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+PADDLE_API_KEY=your_paddle_api_key
 ```
 
 ### 2. PostgreSQL 데이터베이스 생성

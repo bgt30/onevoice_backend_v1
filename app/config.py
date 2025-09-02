@@ -64,11 +64,12 @@ class Settings(BaseSettings):
     SQS_WAIT_TIME_SECONDS: int = Field(default=20, description="SQS 롱폴링 대기 시간(초)")
     SQS_VISIBILITY_TIMEOUT: int = Field(default=900, description="SQS 메시지 가시성 타임아웃(초)")
     
-    # Stripe 설정  
-    STRIPE_SECRET_KEY: Optional[str] = Field(default=None, description="Stripe Secret Key")
-    STRIPE_PUBLISHABLE_KEY: Optional[str] = Field(default=None, description="Stripe Publishable Key")
-    STRIPE_WEBHOOK_SECRET: Optional[str] = Field(default=None, description="Stripe Webhook Secret")
-    
+    # Paddle 설정  
+    PADDLE_API_KEY: Optional[str] = Field(default=None, description="Paddle API Key")
+    PADDLE_ENVIRONMENT: str = Field(default="production", description="Paddle 환경 (sandbox/production)")
+    PADDLE_WEBHOOK_SECRET: Optional[str] = Field(default=None, description="Paddle Webhook Secret")
+    PADDLE_CLIENT_SIDE_TOKEN: Optional[str] = Field(default=None, description="Paddle Client-side Token")
+
     # 외부 API 설정
     OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API 키")
     ELEVENLABS_API_KEY: Optional[str] = Field(default=None, description="ElevenLabs API 키")
