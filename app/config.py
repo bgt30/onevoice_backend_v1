@@ -45,10 +45,7 @@ class Settings(BaseSettings):
     )
     
     # 데이터베이스 설정
-    DATABASE_URL: str = Field(
-        default="postgresql://postgres:password@localhost:5432/onevoice_db",
-        description="PostgreSQL 데이터베이스 URL"
-    )
+    DATABASE_URL: str = Field(default=None, description="PostgreSQL 데이터베이스 URL")
     
     # AWS 설정
     AWS_ACCESS_KEY_ID: Optional[str] = Field(default=None, description="AWS Access Key ID")

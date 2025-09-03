@@ -201,5 +201,7 @@ tests/
 !.elasticbeanstalk/*.global.yml
 .ebextensions/
 
+# Paddle API
+Paddle_API_postman_collection.json
 
 
