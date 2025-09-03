@@ -126,33 +126,3 @@ Consumer -->|"processes job"| DubbingService
 DubbingService -->|"updates status"| JobModel
 DubbingService -->|"sends notifications"| NotificationService
 ```
-
-## 영상 더빙 서비스 아키텍처 상세 구현 방안
-
-- **데이터 흐름**: 사용자 요청 → Route 53 → Web Server(EB) → SQS → Worker(EB) → 결과 처리
-
-### 1) 웹 서버 환경 (Web)
-- **역할**: 업로드·더빙 요청·상태 조회·결과 다운로드 등 실시간 API 처리
-- **핵심**: 빠른 응답 및 비동기 위임
-- **구현**
-  - `POST /dubbing-jobs`: 파일 S3 `originals/` 업로드 → RDS `Jobs` 생성(`PENDING`) → SQS에 `job_id` 송신 → 즉시 `job_id` 응답
-  - `GET /dubbing-jobs/{job_id}`: RDS `Jobs.status` 조회(PENDING/PROCESSING/COMPLETED/FAILED)
-
-### 2) SQS
-- **역할**: Web-Worker 사이 비동기 버퍼
-- **구현**: 표준 큐 생성(예: `DubbingJobsQueue`), Web은 SendMessage, Worker는 Receive→처리→DeleteMessage
-
-### 3) 작업자 환경 (Worker)
-- **역할**: CPU/GPU 집약적 더빙 파이프라인 실행
-- **절차**
-  1. SQSD/폴링으로 새 메시지 수신 후 애플리케이션에 POST 전달
-  2. `job_id`로 RDS 조회 → 상태 `PROCESSING` 업데이트
-  3. S3 `originals/`에서 다운로드 → 더빙 처리(ASR/번역/TTS/FFmpeg 등)
-  4. 결과를 S3 `results/` 업로드 → RDS `COMPLETED` 및 결과 경로 저장
-  5. 필요 시 SES로 완료 알림, 메시지 Delete로 중복 방지
-
-### 4) 스토리지·데이터베이스·모니터링
-- **S3**: 용도별 분리(`originals/`, `results/`), Presigned URL로 안전·저부하 업/다운로드
-- **RDS**: `Users`, `Jobs(job_id,status,original_s3_path,result_s3_path,created_at,...)` 기본 스키마, Private Subnet에서 접근 통제
-- **모니터링**: CloudWatch Logs/지표/알람, SQS 큐 깊이·CPU 사용률 기반 관측, SNS로 경보 알림
-- **도메인**: Route 53으로 사용자 정의 도메인을 EB 환경에 매핑
