@@ -33,33 +33,26 @@ class Settings(BaseSettings):
     ALGORITHM: str = Field(default="HS256", description="JWT 알고리즘")
     
     # CORS 설정
-    ALLOWED_ORIGINS: List[str] = Field(
-        default=[
-            "http://localhost:3000",
-            "http://localhost:3001", 
-            "http://127.0.0.1:3000",
-            "https://onevoice.ai",
-            "https://app.onevoice.ai"
-        ],
-        description="허용된 CORS origin 목록"
-    )
+    ALLOWED_ORIGINS: Optional[List[str]] = Field(default=None, description="허용된 CORS origin 목록")
     
     # 데이터베이스 설정
     DATABASE_URL: str = Field(default=None, description="PostgreSQL 데이터베이스 URL")
     
     # AWS 설정
-    AWS_ACCESS_KEY_ID: Optional[str] = Field(default=None, description="AWS Access Key ID")
-    AWS_SECRET_ACCESS_KEY: Optional[str] = Field(default=None, description="AWS Secret Access Key")
     AWS_REGION: str = Field(default="us-west-2", description="AWS 리전")
     S3_BUCKET_NAME: str = Field(default="onevoice-videos", description="S3 버킷 이름")
-    AWS_USE_IAM_ROLE: bool = Field(default=True, description="인스턴스/역할 자격증명 사용 여부 (기본 True)")
 
     # Task Queue (SQS)
     USE_SQS_TASK_QUEUE: bool = Field(default=False, description="SQS 기반 작업 큐 사용 (로컬 기본 False)")
     SQS_QUEUE_URL: Optional[str] = Field(default=None, description="기본 SQS 큐 URL")
-    SQS_DLQ_URL: Optional[str] = Field(default=None, description="Dead Letter Queue URL")
     SQS_WAIT_TIME_SECONDS: int = Field(default=20, description="SQS 롱폴링 대기 시간(초)")
     SQS_VISIBILITY_TIMEOUT: int = Field(default=900, description="SQS 메시지 가시성 타임아웃(초)")
+    
+    # 이메일/알림 설정 (SES/SNS)
+    SES_ENABLED: bool = Field(default=True, description="Amazon SES 사용 여부")
+    EMAILS_FROM_EMAIL: Optional[str] = Field(default="noreply@onevoice.ai", description="발신 이메일 주소")
+    EMAILS_FROM_NAME: str = Field(default="OneVoice", description="발신자 이름")
+    SNS_ALERTS_TOPIC_ARN: Optional[str] = Field(default=None, description="운영 알림용 SNS 토픽 ARN")
     
     # Paddle 설정  
     PADDLE_API_KEY: Optional[str] = Field(default=None, description="Paddle API Key")
@@ -71,12 +64,6 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = Field(default=None, description="OpenAI API 키")
     ELEVENLABS_API_KEY: Optional[str] = Field(default=None, description="ElevenLabs API 키")
     ANTHROPIC_API_KEY: Optional[str] = Field(default=None, description="Anthropic API 키")
-    
-    # 이메일/알림 설정 (SES/SNS)
-    SES_ENABLED: bool = Field(default=True, description="Amazon SES 사용 여부")
-    EMAILS_FROM_EMAIL: Optional[str] = Field(default="noreply@onevoice.ai", description="발신 이메일 주소")
-    EMAILS_FROM_NAME: str = Field(default="OneVoice", description="발신자 이름")
-    SNS_ALERTS_TOPIC_ARN: Optional[str] = Field(default=None, description="운영 알림용 SNS 토픽 ARN")
     
     # 파일 업로드 설정
     MAX_FILE_SIZE: int = Field(default=500 * 1024 * 1024, description="최대 업로드 파일 크기 (바이트)")  # 500MB
@@ -91,10 +78,6 @@ class Settings(BaseSettings):
         default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         description="로그 포맷"
     )
-    
-    # 모니터링 설정
-    # SENTRY_DSN: Optional[str] = Field(default=None, description="Sentry DSN")
-    # ENABLE_METRICS: bool = Field(default=True, description="메트릭 수집 활성화")
     
     # 크레딧 시스템 설정
     DEFAULT_FREE_CREDITS: int = Field(default=100, description="신규 사용자 기본 무료 크레딧")
